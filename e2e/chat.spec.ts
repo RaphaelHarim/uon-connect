@@ -34,7 +34,7 @@ test('grupo: criação e participantes', async ({ browser }) => {
   await coord.page.getByLabel('Buscar colaboradores').fill('Mariana');
   await coord.page.getByRole('button', { name: /Mariana Gomes/ }).click();
   await coord.page.getByRole('button', { name: /Criar grupo/ }).click();
-  await expect(coord.page.getByText('Larissa Souza criou o grupo "Projeto E2E Itaú".')).toBeVisible();
+  await expect(coord.page.getByLabel('Mensagens').getByText('Larissa Souza criou o grupo "Projeto E2E Itaú".')).toBeVisible();
   const mariana = await newUser(browser, 'mariana.gomes');
   await mariana.page.goto('/conversas');
   await expect(mariana.page.getByRole('link', { name: /Projeto E2E Itaú/ })).toBeVisible();

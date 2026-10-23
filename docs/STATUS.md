@@ -99,9 +99,12 @@ Legenda (sem "concluído" genérico):
 | Layout responsivo, navegação móvel | ✅ | Testado em Pixel 7 (emulado) |
 | PWA instalável, atualização controlada, sem cache de dados corporativos | ✅ | Ícones provisórios. Botão "Instalar o aplicativo" no menu do perfil (Edge/Chrome/Android). Guia em INSTALAR.md |
 | Instalação forçada em computadores gerenciados (Intune/GPO `WebAppInstallForceList`) | 🔌 | Documentada; depende da TI |
-| Instalador `.exe`/`.msi` (Electron/Tauri) | 📝 | O PWA cobre janela própria, ícone e atalho |
+| Página de download `/baixar` e envio de instaladores pela administração | ✅ | Testes de integração e E2E |
+| App de computador (Electron): `.exe` Windows e `.dmg` Mac | 🟡 | Gerados no GitHub Actions; app testado em Linux contra o servidor; **não instalado em Windows/Mac reais**; sem certificado de assinatura (aviso do SmartScreen/Gatekeeper) |
+| App Android (`.apk`, Capacitor) | 🟡 | Gerado e conferido no GitHub Actions; **não instalado em aparelho**; assinatura de depuração até a UON criar a chave (INSTALADORES.md) |
+| Servidor em Windows 11 (WSL2 + Docker) e acesso externo por túnel Cloudflare | 🔌 | Script e guia prontos; sintaxe validada; **não executado em Windows real**; depende de domínio na Cloudflare |
 | Safari/iOS | 🟡 | Não testado em aparelho |
-| App Android/iOS (Capacitor) e publicação em lojas | 📝 / ⛔ | Requer contas de desenvolvedor da UON |
+| Publicação nas lojas (Play Store/App Store) e app nativo iOS | ⛔ | Requer contas de desenvolvedor da UON |
 
 ## Integrações Microsoft 365
 

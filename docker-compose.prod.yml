@@ -63,6 +63,19 @@ services:
     depends_on:
       app: { condition: service_healthy }
 
+  # Acesso de fora sem abrir portas no roteador (docker compose --profile tunnel up -d).
+  # O túnel é criado no painel da Cloudflare (Zero Trust › Networks › Tunnels), apontando
+  # o endereço público para http://app:3000. Veja docs/SERVIDOR-WINDOWS.md.
+  tunnel:
+    image: ${CLOUDFLARED_IMAGE:-cloudflare/cloudflared:2026.9.0}
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      app: { condition: service_healthy }
+
 volumes:
   pgdata:
   files:

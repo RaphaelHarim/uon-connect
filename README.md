@@ -17,7 +17,7 @@ com auditoria imutável e proteção da conta fundadora — com autorização ap
 
 - [Visão rápida](#visão-rápida) · [Requisitos](#requisitos) · [Instalação (desenvolvimento)](#instalação-desenvolvimento)
 - [Comandos](#comandos) · [Contas de demonstração](#contas-de-demonstração) · [Estrutura do projeto](#estrutura-do-projeto)
-- Documentação: [**Colocar no ar e instalar**](docs/INSTALAR.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Segurança](docs/SECURITY.md) · [Banco de dados](docs/DATABASE.md) ·
+- Documentação: [**Colocar no ar e instalar**](docs/INSTALAR.md) · [**Servidor Windows 11**](docs/SERVIDOR-WINDOWS.md) · [Instaladores](docs/INSTALADORES.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Segurança](docs/SECURITY.md) · [Banco de dados](docs/DATABASE.md) ·
   [Implantação](docs/DEPLOYMENT.md) · [Integrações](docs/INTEGRATIONS.md) · [Testes](docs/TESTING.md) ·
   [Recuperação e backup](docs/RECOVERY.md) · [Privacidade (LGPD)](docs/PRIVACY.md) · [Mobile/PWA](docs/MOBILE.md) ·
   [API](docs/API.md) · [Estado das funcionalidades](docs/STATUS.md) · [Apresentação executiva](docs/APRESENTACAO-EXECUTIVA.md) ·
