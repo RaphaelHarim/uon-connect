@@ -55,7 +55,7 @@ async function rolesOf(deps: Deps, userId: string): Promise<PlatformRole[]> {
  *  - the founder account is never a valid target of administrative changes;
  *  - accounts holding any platform role can only be changed by a Supreme Admin.
  */
-async function assertCanAdminister(deps: Deps, ctx: AuthContext, target: UserRow, action: string, meta?: RequestMeta) {
+export async function assertCanAdminister(deps: Deps, ctx: AuthContext, target: UserRow, action: string, meta?: RequestMeta) {
   if (!ctx.permissions.has('users.manage')) {
     await deny(deps, ctx, action, target.id, 'missing_permission', 'Você não tem permissão para administrar usuários.', meta);
   }

@@ -42,6 +42,35 @@ export const devLoginBody = z.object({
   password: z.string().min(1).max(200),
 });
 
+export const localLoginBody = z.object({
+  email: z.email().max(254),
+  password: z.string().min(1).max(200),
+});
+
+export const mfaLoginBody = z.object({
+  challenge: z.string().min(20).max(100),
+  code: z.string().regex(/^\d{6}$/, 'Informe os 6 dígitos do aplicativo autenticador.'),
+});
+
+export const oneTimeTokenBody = z.object({ token: z.string().min(20).max(100) });
+
+export const setPasswordBody = z.object({
+  token: z.string().min(20).max(100),
+  password: z.string().min(1).max(200),
+});
+
+export const changePasswordBody = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newPassword: z.string().min(1).max(200),
+});
+
+export const mfaCodeBody = z.object({ code: z.string().regex(/^\d{6}$/, 'Informe os 6 dígitos do aplicativo autenticador.') });
+
+export const mfaDisableBody = z.object({
+  password: z.string().min(1).max(200),
+  code: z.string().regex(/^\d{6}$/, 'Informe os 6 dígitos do aplicativo autenticador.'),
+});
+
 /* ---------------------------------------------------------------- org */
 
 export const departmentBody = z.object({

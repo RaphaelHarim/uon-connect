@@ -47,7 +47,7 @@ export function attachSocketServer(server: HttpServer, deps: Deps) {
       if (!token) return next(new Error('unauthorized'));
       const session = await resolveSession(db, env, token);
       if (!session) return next(new Error('unauthorized'));
-      const ctx = await loadAuthContext(db, session.userId, session);
+      const ctx = await loadAuthContext(db, session.userId, session, { requireAdminMfa: env.LOCAL_AUTH_ADMIN_MFA_REQUIRED });
       if (!ctx) return next(new Error('unauthorized'));
       (socket as AppSocket).data.ctx = ctx;
       next();

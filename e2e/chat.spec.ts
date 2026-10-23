@@ -12,12 +12,14 @@ test('mensagens chegam em tempo real, com reações e confirmação de leitura',
   const text = `Mensagem em tempo real ${Date.now()}`;
   await ana.page.getByLabel('Mensagem', { exact: true }).fill(text);
   await ana.page.keyboard.press('Enter');
-  // Arrives on the other side without reloading.
-  await expect(diego.page.getByText(text)).toBeVisible();
+  // Arrives on the other side without reloading. (Scoped to the message pane: the conversation
+  // list shows the same text as a preview.)
+  const received = diego.page.getByLabel('Mensagens').getByText(text);
+  await expect(received).toBeVisible();
   // ...and the sender sees it as read once the recipient has the conversation open.
   await expect(ana.page.getByText('Lida').last()).toBeVisible();
 
-  await diego.page.getByText(text).hover();
+  await received.hover();
   await diego.page.getByRole('button', { name: 'Reagir' }).last().click();
   await diego.page.getByRole('button', { name: 'Reagir com 👍' }).click();
   await expect(ana.page.getByRole('button', { name: '👍 1' }).last()).toBeVisible();

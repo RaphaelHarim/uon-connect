@@ -41,7 +41,7 @@ export function registerAuthRoutes(app: App, deps: Deps, entra: EntraProvider) {
           .where(and(eq(users.isDemo, true), eq(users.status, 'active')))
           .orderBy(users.displayName)
       : [];
-    return { devLoginEnabled: env.devLoginEnabled, entraEnabled: entra.enabled, demoUsers };
+    return { devLoginEnabled: env.devLoginEnabled, entraEnabled: entra.enabled, localEnabled: env.localAuthEnabled, demoUsers };
   });
 
   /**

@@ -147,7 +147,7 @@ export async function buildApp(env: Env): Promise<BuiltApp> {
     const token = req.cookies[sessionCookieName(env)];
     if (token) {
       const session = await resolveSession(db, env, token);
-      if (session) req.auth = await loadAuthContext(db, session.userId, session);
+      if (session) req.auth = await loadAuthContext(db, session.userId, session, { requireAdminMfa: env.LOCAL_AUTH_ADMIN_MFA_REQUIRED });
     }
     if (MUTATING.has(req.method)) {
       // A custom header can't be sent cross-site without a CORS preflight, which we don't allow.

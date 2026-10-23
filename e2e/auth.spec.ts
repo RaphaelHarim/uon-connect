@@ -4,7 +4,7 @@ import { loginAs } from './helpers';
 test('redireciona para o login e entra com conta de demonstração', async ({ page }) => {
   await page.goto('/chamados');
   await expect(page).toHaveURL(/\/login\?voltar=%2Fchamados/);
-  await expect(page.getByText('O login corporativo (Microsoft Entra ID) ainda não foi configurado')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Entrar', exact: true })).toBeVisible();
   await loginAs(page, 'ana.costa');
   await expect(page.getByText('Ambiente de demonstração')).toBeVisible();
   await page.getByRole('button', { name: 'Menu do perfil' }).click();

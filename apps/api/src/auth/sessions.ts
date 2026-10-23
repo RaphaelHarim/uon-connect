@@ -4,13 +4,15 @@ import type { Tx } from '../db/client.js';
 import { sessions } from '../db/schema/index.js';
 import { randomToken, sha256Hex } from '../lib/crypto.js';
 
+export type AuthMethod = 'entra' | 'dev' | 'local';
+
 export const SESSION_COOKIE = 'uon_session';
 export const sessionCookieName = (env: Env) => (env.cookieSecure ? `__Host-${SESSION_COOKIE}` : SESSION_COOKIE);
 
 export async function createSession(
   db: Tx,
   env: Env,
-  input: { userId: string; authMethod: 'entra' | 'dev'; ip?: string; userAgent?: string },
+  input: { userId: string; authMethod: AuthMethod; mfa?: boolean; ip?: string; userAgent?: string },
 ) {
   const token = randomToken(32);
   const id = sha256Hex(token);
@@ -20,6 +22,7 @@ export async function createSession(
     id,
     userId: input.userId,
     authMethod: input.authMethod,
+    mfa: input.mfa ?? false,
     csrfToken,
     ip: input.ip ?? null,
     userAgent: input.userAgent?.slice(0, 300) ?? null,
@@ -32,7 +35,8 @@ export interface ValidSession {
   id: string;
   userId: string;
   csrfToken: string;
-  authMethod: 'entra' | 'dev';
+  authMethod: AuthMethod;
+  mfa: boolean;
 }
 
 /** Returns the session for a raw cookie token, enforcing absolute and idle expiry. */
@@ -55,7 +59,7 @@ export async function resolveSession(db: Tx, env: Env, token: string): Promise<V
   if (now.getTime() - row.lastSeenAt.getTime() > 60_000) {
     await db.update(sessions).set({ lastSeenAt: now }).where(eq(sessions.id, id));
   }
-  return { id: row.id, userId: row.userId, csrfToken: row.csrfToken, authMethod: row.authMethod };
+  return { id: row.id, userId: row.userId, csrfToken: row.csrfToken, authMethod: row.authMethod, mfa: row.mfa };
 }
 
 export async function revokeSession(db: Tx, id: string, reason: string) {

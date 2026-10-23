@@ -4,6 +4,7 @@ import type { Mailer } from './jobs/mailer.js';
 import type { App } from './lib/types.js';
 import { registerAdminRoutes } from './modules/admin/routes.js';
 import { registerAuditRoutes } from './modules/audit/routes.js';
+import { registerLocalAuthRoutes } from './modules/auth/local-routes.js';
 import { registerAuthRoutes } from './modules/auth/routes.js';
 import { registerChatRoutes } from './modules/chat/routes.js';
 import { registerDashboardRoutes } from './modules/dashboards/routes.js';
@@ -26,6 +27,7 @@ export interface Extras {
 
 export function registerRoutes(app: App, deps: Deps, extras: Extras) {
   registerAuthRoutes(app, deps, extras.entra);
+  registerLocalAuthRoutes(app, deps, extras);
   registerMeRoutes(app, deps, extras);
   registerOrgRoutes(app, deps);
   registerUserAdminRoutes(app, deps);
