@@ -59,13 +59,16 @@ export function attachSocketServer(server: HttpServer, deps: Deps) {
 
   const socketsOf = (userId: string) => io.sockets.adapter.rooms.get(`user:${userId}`)?.size ?? 0;
 
-  io.on('connection', async (raw) => {
+  io.on('connection', (raw) => {
     const socket = raw as AppSocket;
     const { ctx } = socket.data;
     const first = socketsOf(ctx.userId) === 0;
-    await socket.join([`user:${ctx.userId}`, 'authenticated']);
-    await touchLastSeen(db, ctx.userId).catch(() => undefined);
-    if (first) await broadcastPresence(deps, ctx.userId).catch(() => undefined);
+    // Join and register handlers synchronously so events sent right after connecting aren't lost.
+    void socket.join([`user:${ctx.userId}`, 'authenticated']);
+    void (async () => {
+      await touchLastSeen(db, ctx.userId).catch(() => undefined);
+      if (first) await broadcastPresence(deps, ctx.userId).catch(() => undefined);
+    })();
 
     // Untyped event handlers: every payload is validated before use.
     const on = (event: string, handler: (payload: unknown, ack?: (r: unknown) => void) => Promise<void> | void) =>
@@ -154,7 +157,9 @@ export function attachSocketServer(server: HttpServer, deps: Deps) {
     });
 
     socket.on('disconnecting', () => {
-      for (const room of socket.rooms) if (room.startsWith('call:')) void leaveCall(room.slice(5));
+      for (const room of socket.rooms) {
+        if (room.startsWith('call:')) leaveCall(room.slice(5)).catch((err) => log.warn({ err }, 'call cleanup failed'));
+      }
     });
 
     socket.on('disconnect', async () => {

@@ -1,10 +1,14 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { createDatabase } from '../db/client.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const MIGRATIONS_DIR = process.env.MIGRATIONS_DIR ?? path.resolve(here, '../../drizzle');
+// Works both from source (src/scripts) and from the bundle (dist/).
+export const MIGRATIONS_DIR =
+  process.env.MIGRATIONS_DIR ??
+  [path.resolve(here, '../../drizzle'), path.resolve(here, '../drizzle')].find((d) => existsSync(path.join(d, 'meta/_journal.json')))!;
 
 export async function runMigrations(url: string) {
   const { db, pool } = createDatabase(url, 1);

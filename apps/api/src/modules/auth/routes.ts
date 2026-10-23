@@ -5,7 +5,7 @@ import { EntraClaimError, type EntraProvider, verifyEntraClaims } from '../../au
 import { createSession, revokeSession, sessionCookieName } from '../../auth/sessions.js';
 import { authFlows, oauthTokens, userIdentities, users } from '../../db/schema/index.js';
 import type { Deps } from '../../deps.js';
-import { encrypt, randomToken, safeEqual } from '../../lib/crypto.js';
+import { encrypt, safeEqual } from '../../lib/crypto.js';
 import { AppError, unauthorized } from '../../lib/errors.js';
 import { reqMeta, requireAuth } from '../../lib/http.js';
 import type { App } from '../../lib/types.js';
