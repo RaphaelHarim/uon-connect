@@ -1,5 +1,9 @@
 # Implantação
 
+> **Caminho recomendado:** `scripts/install.sh` faz tudo desta página em um comando (segredos, banco, papel
+> mínimo, HTTPS com Caddy, conta fundadora) e `scripts/install.sh --update` atualiza. Passo a passo para a TI,
+> inclusive no Azure, em [INSTALAR.md](INSTALAR.md). O restante desta página descreve o processo manual.
+
 ## Topologia recomendada (inicial)
 
 ```
@@ -17,8 +21,9 @@ PostgreSQL, RDS) — preferível pelo backup com PITR.
 2. Certificado TLS no proxy (Caddy/Nginx/Traefik ou load balancer da nuvem). Encaminhe `X-Forwarded-*`
    e o upgrade de WebSocket em `/socket.io`.
 3. Registro do aplicativo no Entra ID ([INTEGRATIONS.md](INTEGRATIONS.md)).
-4. Copie `.env.example` → `.env.production` e preencha. Obrigatórios: `APP_BASE_URL=https://…`,
-   variáveis do Entra ID. **Não** defina `AUTH_DEV_LOGIN_ENABLED` (o servidor recusa iniciar).
+4. Copie `.env.example` → `.env.production` e preencha. Obrigatórios: `APP_BASE_URL=https://…` e ao menos
+   um método de login: variáveis do Entra ID e/ou `LOCAL_AUTH_ENABLED=true` + `TOKEN_ENCRYPTION_KEY`.
+   **Não** defina `AUTH_DEV_LOGIN_ENABLED` (o servidor recusa iniciar).
 
 Exemplo Caddy:
 
@@ -30,6 +35,9 @@ connect.exemplo.com {
 ```
 
 ## 2. Primeira implantação (Docker Compose)
+
+Os comandos abaixo supõem as variáveis exportadas no shell; com o arquivo, use
+`docker compose --env-file .env.production -f docker-compose.prod.yml …`.
 
 ```bash
 export POSTGRES_OWNER_PASSWORD='…' POSTGRES_APP_PASSWORD='…'
@@ -43,6 +51,7 @@ docker compose -f docker-compose.prod.yml exec -T postgres \
 docker compose -f docker-compose.prod.yml up -d app
 # conta fundadora (ver RECOVERY.md)
 docker compose -f docker-compose.prod.yml run --rm migrate node apps/api/dist/bootstrap-founder.js --email … --name … --oid … --tenant …
+# ou, com login por senha: … bootstrap-founder.js --local --email … --name …  (mostra o link para definir a senha)
 ```
 
 Validado nesta versão: a imagem foi construída, migrações e seed rodaram com o papel proprietário, o papel
@@ -87,7 +96,7 @@ Os usuários veem o aviso "Nova versão disponível" (PWA) e escolhem quando atu
 
 - E-mail: `EMAIL_ENABLED=true` + SMTP. Em desenvolvimento, `docker compose up mailpit` e `SMTP_HOST=localhost SMTP_PORT=1025`.
 - Arquivos: volume `/data` (faça backup). Limites: `UPLOAD_MAX_FILE_MB`, `UPLOAD_USER_QUOTA_MB`.
-- TURN: `docker compose -f docker-compose.prod.yml --profile turn up -d coturn`, liberar portas e definir
+- TURN: `docker compose --env-file .env.production -f docker-compose.turn.yml up -d`, liberar portas e definir
   `TURN_URLS`/`TURN_SECRET`.
 
 ## 6. Diagnóstico de erros comuns

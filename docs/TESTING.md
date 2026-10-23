@@ -17,16 +17,41 @@ O `docker-compose.yml` de desenvolvimento cria ambos.
 | Conjunto | Resultado |
 | --- | --- |
 | `packages/shared` (presença) | 3/3 ✔ |
-| API — integração e unidade | **91/91 ✔** em 6 arquivos |
-| E2E Playwright (Chromium desktop + Pixel 7) | **13/13 ✔** |
+| API — integração e unidade | **110/110 ✔** em 7 arquivos |
+| E2E Playwright (Chromium desktop + Pixel 7) | **14/14 ✔** (ver nota sobre o teste de grupo) |
 | TypeScript estrito (shared, api, web) | ✔ sem erros |
 | ESLint | ✔ sem erros |
 | Build de produção (API + web/PWA) | ✔ |
 | Imagem Docker + contêiner de produção | ✔ (ver DEPLOYMENT) |
 | Backup e restauração | ✔ (ver RECOVERY) |
+| Instalador `scripts/install.sh` do zero em Docker, HTTPS via Caddy (CA interna), restrição por IP, `--update`, `backup-docker.sh` + restauração, recuperação `reset-local` | ✔ |
+| Fluxo em produção pelo HTTPS: fundadora define senha → admin suspenso sem 2FA (403) → ativa 2FA → convida → convidada entra; cookie `__Host-` `Secure` `HttpOnly` | ✔ |
 | `npm audit --omit=dev` | 0 vulnerabilidades |
 
+Notas desta rodada:
+- `chat.spec.ts` › *grupo: criação e participantes* falhou 1 vez em 10 execuções seguidas (as outras 9
+  passaram). A causa não foi isolada; fica registrado como possível instabilidade do teste.
+- No teste de instalação com `--tls internal`, o service worker do PWA **não** registra porque o navegador
+  de teste não confia na CA interna (comportamento esperado do navegador). Com certificado público ou com a
+  raiz da CA interna instalada nos computadores, o PWA registra normalmente.
+
 ## Cobertura por requisito
+
+### Login por usuário e senha (`apps/api/src/test/local-auth.test.ts`, `e2e/local-auth.spec.ts`)
+
+- scrypt; política de senha (tamanho, comuns, e-mail, repetição); TOTP com vetor da RFC 6238, janela ±1 e
+  recusa de reutilização.
+- Convite: e-mail enviado, link inspecionável, senha fraca recusada, uso único (410 na 2ª vez), novo link
+  invalida o anterior; mesma mensagem para e-mail inexistente e senha errada.
+- Bloqueio após N erros (inclusive com a senha certa) e desbloqueio pela administração; redefinição encerra
+  sessões; troca de senha com a senha atual; conta desativada não entra.
+- 2FA: código exigido após a senha, código errado e código reutilizado recusados, desafio de uso único;
+  sessão local sem 2FA não tem permissões administrativas até ativar; redefinição de 2FA pela administração.
+- Fundadora: nenhum administrador emite link, redefine 2FA ou desbloqueia (403); o banco recusa o link
+  fora do procedimento de recuperação; contas de demonstração não recebem senha local.
+- Configuração: desligado por padrão; exige `TOKEN_ENCRYPTION_KEY`; produção sem método de login não inicia.
+- E2E: convite → definir senha (token some da barra de endereço, axe sem violações) → link reutilizado
+  recusado → login → ativar 2FA com QR (axe) → novo login com código.
 
 ### Autenticação e autorização (`apps/api/src/test/auth.test.ts`, `founder.test.ts`, `tickets.test.ts`, `chat.test.ts`)
 

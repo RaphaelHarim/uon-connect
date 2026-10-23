@@ -1,0 +1,19 @@
+# Opcional: TURN (coturn) para chamadas de vídeo entre redes diferentes.
+#   docker compose --env-file .env.production -f docker-compose.turn.yml up -d
+# Libere 3478/udp+tcp e 49160-49200/udp e defina TURN_URLS/TURN_SECRET no app (docs/DEPLOYMENT.md).
+services:
+  coturn:
+    image: coturn/coturn:4.6
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -n
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET:?defina TURN_SECRET}
+      - --realm=${TURN_REALM:-uon-connect}
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49200
+      - --no-cli
+      - --fingerprint
+

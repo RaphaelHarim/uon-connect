@@ -1,0 +1,20 @@
+# UON CONNECT — proxy HTTPS (Caddy). Usado pelo perfil "https" do docker-compose.prod.yml.
+#
+#   UON_DOMAIN       endereço do app, ex.: connect.uonconsulting.com.br
+#   UON_TLS          auto     = certificado público automático (Let's Encrypt; exige DNS público
+#                               apontando para o servidor e portas 80/443 abertas)
+#                    internal = certificado da CA interna do Caddy (rede interna sem DNS público;
+#                               instale a raiz em /data/caddy/pki/authorities/local/root.crt nos PCs)
+#                    files    = certificado da empresa em deploy/caddy/certs/cert.pem e key.pem
+#   UON_ALLOWED_IPS  faixas que podem acessar (ex.: "200.1.2.3/32 10.0.0.0/8"). Padrão: qualquer IP.
+
+{$UON_DOMAIN} {
+	import tls-{$UON_TLS:auto}.caddy
+
+	@outside not remote_ip {$UON_ALLOWED_IPS:0.0.0.0/0 ::/0}
+	respond @outside "Acesso restrito à rede da UON." 403
+
+	encode zstd gzip
+	header -Server
+	reverse_proxy app:3000
+}

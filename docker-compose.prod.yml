@@ -1,6 +1,7 @@
 # Implantação de referência em um único servidor (Docker Compose).
-# Coloque um proxy reverso com TLS (Caddy, Nginx, Traefik ou o load balancer da nuvem) na frente do serviço `app`.
-# Variáveis: copie .env.example para .env.production e preencha. Veja docs/DEPLOYMENT.md.
+# O jeito mais simples é o instalador: scripts/install.sh (gera .env.production, sobe tudo com HTTPS).
+# HTTPS: use o perfil "https" (Caddy, abaixo) ou o proxy/load balancer que a TI já tiver.
+# Sempre chame com --env-file .env.production. Veja docs/DEPLOYMENT.md.
 services:
   postgres:
     image: postgres:16-alpine
@@ -44,23 +45,26 @@ services:
     depends_on:
       migrate: { condition: service_completed_successfully }
 
-  # Opcional: TURN para chamadas de vídeo entre redes diferentes (docker compose --profile turn up).
-  coturn:
-    image: coturn/coturn:4.6
-    profiles: ["turn"]
+  # HTTPS automático na frente do app (docker compose --profile https up -d). Veja deploy/caddy/Caddyfile.
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2.10-alpine}
+    profiles: ["https"]
     restart: unless-stopped
-    network_mode: host
-    command:
-      - -n
-      - --use-auth-secret
-      - --static-auth-secret=${TURN_SECRET:?defina TURN_SECRET}
-      - --realm=${TURN_REALM:-uon-connect}
-      - --listening-port=3478
-      - --min-port=49160
-      - --max-port=49200
-      - --no-cli
-      - --fingerprint
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      UON_DOMAIN: ${UON_DOMAIN:-localhost}
+      UON_TLS: ${UON_TLS:-auto}
+      UON_ALLOWED_IPS: ${UON_ALLOWED_IPS:-0.0.0.0/0 ::/0}
+    volumes:
+      - ./deploy/caddy:/etc/caddy:ro
+      - ./deploy/caddy/certs:/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app: { condition: service_healthy }
 
 volumes:
   pgdata:
   files:
+  caddy_data:
+  caddy_config:

@@ -13,6 +13,7 @@
 | Área | Rotas |
 | --- | --- |
 | Autenticação | `GET /auth/providers` · `POST /auth/dev-login` · `GET /auth/entra/login` · `GET /auth/entra/callback` · `POST /auth/logout` |
+| Senha local | `POST /auth/login` (→ `mfaRequired` + `challenge`) · `POST /auth/login/mfa` · `POST /auth/password/inspect` · `POST /auth/password/set` · `GET /me/security` · `POST /me/password` · `POST /me/mfa/setup|enable|disable` · admin: `GET /admin/users/:id/local` · `POST /admin/users/:id/local-access|local-unlock|mfa-reset` |
 | Eu | `GET /config` · `GET/PATCH /me` · `PUT /me/preferences` · `GET /me/sessions` · `DELETE /me/sessions/:ref` · `POST/DELETE /me/avatar` · `PUT /me/presence` · `GET/POST /me/absences` · `POST /me/absences/:id/activate|end` |
 | Pessoas | `GET /directory` · `GET /users/:id/profile` · `GET /users/:id/avatar` · `GET /users/:id/absence` · `GET /presence?ids=` |
 | Organização | `GET /org/structure` · `POST/PUT /admin/departments` · `/admin/teams` · `/admin/clients` |

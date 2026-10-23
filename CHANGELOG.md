@@ -2,6 +2,24 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versionamento semântico.
 
+## [0.2.0] — 2026-10-23
+
+### Adicionado
+- **Login por usuário e senha** (`LOCAL_AUTH_ENABLED`): sem cadastro aberto, convite e redefinição por link de
+  uso único, política de senha, scrypt, bloqueio após tentativas, troca de senha, sessões encerradas ao
+  redefinir.
+- **Verificação em duas etapas (TOTP)** com QR code; obrigatória para funções administrativas em contas locais.
+- Administração › Usuários › *Acesso por senha*: gerar convite/link, desbloquear, redefinir 2FA.
+- Conta fundadora com login local (`bootstrap-founder --local`) e recuperação `--recover reset-local`;
+  triggers impedem emitir link de senha da fundadora fora desse procedimento.
+- **Instalador de servidor** `scripts/install.sh` (segredos, banco, papel mínimo, HTTPS com Caddy, conta
+  fundadora, `--update`), restrição de acesso por IP, `scripts/backup-docker.sh`.
+- Botão "Instalar o aplicativo" (PWA) e guia [docs/INSTALAR.md](docs/INSTALAR.md) (servidor, Azure, Intune).
+
+### Alterado
+- Produção recusa iniciar sem nenhum método de login configurado.
+- TURN movido para `docker-compose.turn.yml`.
+
 ## [0.1.0] — 2026-10-23
 
 Primeira versão do UON CONNECT, desenvolvida do zero.

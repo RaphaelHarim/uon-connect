@@ -2,8 +2,27 @@
 
 ## 1. Bootstrap da conta fundadora (uma única vez)
 
-A conta fundadora é a administração máxima da plataforma. Ela é identificada pelo **Object ID (`oid`)** do
-usuário no Microsoft Entra ID — não pelo e-mail ou nome.
+A conta fundadora é a administração máxima da plataforma. Há duas formas de criá-la, conforme o login usado.
+
+### 1a. Com login por usuário e senha (`LOCAL_AUTH_ENABLED=true`)
+
+O instalador (`scripts/install.sh`, ver [INSTALAR.md](INSTALAR.md)) já faz este passo. Manualmente, com a
+`DATABASE_URL` do **papel proprietário** do banco:
+
+```bash
+APP_BASE_URL=https://connect.exemplo.com.br npm run bootstrap:founder -- \
+  --local --email nome.sobrenome@exemplo.com.br --name "Nome Sobrenome"
+# imagem Docker: node apps/api/dist/bootstrap-founder.js --local --email … --name …
+```
+
+O comando mostra **uma vez** um link de uso único (válido por `LOCAL_AUTH_INVITE_TTL_HOURS`, padrão 72 h) para
+a pessoa definir a senha. O link vai no fragmento da URL (`#…`), que o navegador não envia ao servidor, e
+some da barra de endereço ao abrir. Depois de entrar, a fundadora deve ativar a verificação em duas etapas:
+sem ela, as permissões administrativas ficam suspensas (`LOCAL_AUTH_ADMIN_MFA_REQUIRED=true`).
+
+### 1b. Com Microsoft Entra ID
+
+A conta é identificada pelo **Object ID (`oid`)** do usuário no Entra ID — não pelo e-mail ou nome.
 
 Pré-requisitos: Entra ID configurado ([INTEGRATIONS.md](INTEGRATIONS.md)), migrações aplicadas e
 `db:seed:base` executado.
@@ -20,7 +39,7 @@ npm run bootstrap:founder -- \
 # imagem Docker: node apps/api/dist/bootstrap-founder.js --email … --name … --oid … --tenant …
 ```
 
-3. A pessoa entra com a conta Microsoft. Não existe senha local.
+3. A pessoa entra com a conta Microsoft.
 
 O comando recusa executar se já houver uma conta fundadora e registra `founder.bootstrapped` na auditoria
 (autor: usuário e máquina do sistema operacional).
@@ -58,15 +77,34 @@ npm run bootstrap:founder -- --recover transfer \
   --reason "Ata da reunião de diretoria de <data>" --confirm-recovery
 ```
 
-A conta de destino precisa estar ativa e já ter entrado pelo Entra ID. A conta anterior permanece Supreme
+A conta de destino precisa estar ativa e já ter entrado ao menos uma vez (Entra ID ou senha local). A conta anterior permanece Supreme
 Admin até ser revisada pela nova fundadora. Ambos os casos ficam registrados na auditoria
 (`founder.recovered_relink` / `founder.recovered_transfer`) com a justificativa.
 
 Depois da recuperação: encerrar sessões da conta afetada (Administração → Usuários → Encerrar sessões) e
 verificar a auditoria (`npm run audit:verify`).
 
+### Senha da conta fundadora (login local)
+
+Se a fundadora esqueceu a senha ou perdeu o celular da verificação em duas etapas, **nenhum administrador**
+consegue redefinir pela interface — e o banco recusa emitir o link mesmo que alguém tente direto com o
+usuário da aplicação. O caminho é este procedimento, no servidor, com o papel proprietário:
+
+```bash
+node apps/api/dist/bootstrap-founder.js --recover reset-local \
+  --reason "Chamado 1234 — aprovado por <nome/cargo> em <data>" --confirm-recovery
+# instalação via Docker: docker compose --env-file .env.production -f docker-compose.prod.yml \
+#   run --rm -e APP_BASE_URL=https://<domínio> migrate node apps/api/dist/bootstrap-founder.js --recover reset-local …
+```
+
+Ele desativa a 2FA, desbloqueia a conta e mostra um link de nova senha (uso único, 24 h). Definir a senha
+encerra todas as sessões da conta. Fica registrado como `founder.recovered_reset_local`, com a justificativa.
+
 ## 5. Recuperação de acesso de outros usuários
 
+- Login por senha: em Administração › Usuários › (pessoa) › **Acesso por senha**, gere um link de nova senha
+  (24 h, uso único; invalida links anteriores), desbloqueie após tentativas erradas ou redefina a 2FA de quem
+  perdeu o celular. Contas administrativas só podem ser alteradas por um Supreme Admin.
 - Contas desativadas: reativação pela Administração (Supreme Admin para contas administrativas).
 - Perda da conta Microsoft: a TI corrige no Entra ID; se o `oid` mudar, um Supreme Admin pode remover o
   vínculo antigo pelo banco (procedimento de suporte) e o próximo login associa pelo e-mail
