@@ -1,107 +1,45 @@
 {
   "name": "uon-connect",
-  "productName": "UON Connect",
-  "version": "0.9.0-mvp",
-  "description": "Chamados de TI e tarefas da equipe — sistema interno da UON Brasil",
-  "author": "Equipe de TI - UON Brasil",
-  "license": "UNLICENSED",
   "private": true,
-  "main": "electron/main.cjs",
-  "scripts": {
-    "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
-    "dev:servidor": "concurrently -k \"vite --mode teste\" \"wait-on tcp:5173 && cross-env NODE_ENV=development UON_PROFILE=usuario1 electron .\"",
-    "dev:janela2": "wait-on tcp:5173 && cross-env NODE_ENV=development UON_PROFILE=usuario2 electron .",
-    "dev:web": "vite",
-    "server": "node server/src/index.js",
-    "server:install": "npm --prefix server install",
-    "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
-    "build:servidor": "tsc --noEmit && vite build --mode servidor",
-    "preview": "vite preview",
-    "start": "electron .",
-    "dist": "npm run build && electron-builder --win",
-    "dist:servidor": "npm run build:servidor && electron-builder --win",
-    "dist:portable": "npm run build && electron-builder --win portable",
-    "publicar": "npm run build:servidor && electron-builder --win --publish never && node scripts/publicar-atualizacao.mjs",
-    "build:teste": "tsc --noEmit && vite build --mode teste",
-    "dist:teste": "npm run build:teste && electron-builder --win --publish never --config.extraMetadata.uonTestBuild=true --config.win.artifactName=UON-Connect-TESTE-Setup-${version}.${ext}"
-  },
+  "version": "0.1.0",
+  "description": "UON CONNECT — plataforma corporativa da UON Consulting",
+  "license": "UNLICENSED",
+  "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "electron-updater": "^6.8.9",
-    "express": "^4.21.2",
-    "imapflow": "^1.0.171",
-    "jsonwebtoken": "^9.0.2",
-    "mailparser": "^3.7.2",
-    "nodemailer": "^6.9.16",
-    "socket.io": "^4.8.1"
+  "workspaces": [
+    "packages/shared",
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @uon/api & npm run dev --workspace @uon/web; wait",
+    "dev:api": "npm run dev --workspace @uon/api",
+    "dev:web": "npm run dev --workspace @uon/web",
+    "build": "npm run build --workspace @uon/shared && npm run build --workspace @uon/api && npm run build --workspace @uon/web",
+    "start": "npm run start --workspace @uon/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "npm run test --workspace @uon/shared && npm run test --workspace @uon/api",
+    "test:e2e": "playwright test",
+    "db:migrate": "npm run db:migrate --workspace @uon/api",
+    "db:generate": "npm run db:generate --workspace @uon/api",
+    "db:seed:base": "npm run db:seed:base --workspace @uon/api",
+    "db:seed:demo": "npm run db:seed:demo --workspace @uon/api",
+    "bootstrap:founder": "npm run bootstrap:founder --workspace @uon/api",
+    "audit:verify": "npm run audit:verify --workspace @uon/api"
   },
   "devDependencies": {
-    "@types/node": "^22.9.0",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
-    "concurrently": "^9.1.0",
-    "cross-env": "^7.0.3",
-    "electron": "^43.0.0",
-    "electron-builder": "^26.15.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "socket.io-client": "^4.8.1",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.11",
-    "wait-on": "^8.0.1"
-  },
-  "build": {
-    "appId": "br.com.uon.connect",
-    "productName": "UON Connect",
-    "copyright": "© UON Brasil — uso interno",
-    "directories": {
-      "output": "release",
-      "buildResources": "build"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "server/src/**/*",
-      "package.json"
-    ],
-    "publish": [
-      {
-        "provider": "generic",
-        "url": "http://localhost:4000/updates",
-        "channel": "latest"
-      }
-    ],
-    "win": {
-      "icon": "build/icon.png",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "artifactName": "UON-Connect-Setup-${version}.${ext}"
-    },
-    "portable": {
-      "artifactName": "UON-Connect-Portatil-${version}.${ext}"
-    },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "UON Connect",
-      "installerLanguages": [
-        "pt_BR"
-      ],
-      "language": "1046"
-    }
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "~1.63.0",
+    "@types/node": "^22.15.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "globals": "^16.0.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^4.1.12"
   }
 }
