@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { BuiltApp } from '../app.js';
-import { integrationStatus, jobs, oauthTokens } from '../db/schema/index.js';
+import { integrationStatus, jobs, notifications, oauthTokens, tickets } from '../db/schema/index.js';
 import { BackgroundRunner } from '../jobs/runner.js';
 import { encrypt } from '../lib/crypto.js';
 import { GraphClient } from '../modules/integrations/graph.js';
@@ -90,5 +90,27 @@ describe('Microsoft Graph client', () => {
     expect(items.find((i) => i.key === 'entra_id')!.state).toBe('not_configured');
     expect(items.find((i) => i.key === 'teams_meetings')!.state).toBe('not_configured');
     expect((await admin.post('/admin/integrations/storage/check')).json().state).toBe('healthy');
+  });
+});
+
+describe('scheduled maintenance', () => {
+  it('auto-closes old resolved tickets and warns the assignee before the SLA deadline', async () => {
+    const db = built.deps.db;
+    const [resolved] = await db.select().from(tickets).where(eq(tickets.statusKey, 'in_progress')).limit(1);
+    await db.update(tickets).set({ statusKey: 'resolved', resolvedAt: new Date(Date.now() - 10 * 86_400_000) }).where(eq(tickets.id, resolved!.id));
+    const [due] = await db.select().from(tickets).where(and(eq(tickets.statusKey, 'triage'), isNotNull(tickets.assigneeId))).limit(1);
+    await db.update(tickets).set({ resolutionDueAt: new Date(Date.now() + 30 * 60_000), slaPolicyId: due!.slaPolicyId }).where(eq(tickets.id, due!.id));
+
+    const runner = new BackgroundRunner(built.deps, built.mailer);
+    await runner.tick();
+
+    const [after] = await db.select().from(tickets).where(eq(tickets.id, resolved!.id));
+    expect(after!.statusKey).toBe('closed');
+    const warn = await db.select().from(notifications).where(and(eq(notifications.userId, due!.assigneeId!), eq(notifications.category, 'deadline'), eq(notifications.resourceId, due!.id)));
+    expect(warn).toHaveLength(1);
+    // Only once per ticket.
+    await runner.tick();
+    const again = await db.select().from(notifications).where(and(eq(notifications.category, 'deadline'), eq(notifications.resourceId, due!.id)));
+    expect(again).toHaveLength(1);
   });
 });
