@@ -46,17 +46,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    let entraLogoutUrl: string | null = null;
     try {
-      const r = await post<{ entraLogoutUrl: string | null }>('/auth/logout');
-      closeSocket();
-      qc.clear();
-      if (r.entraLogoutUrl) {
-        window.location.href = r.entraLogoutUrl;
-        return;
-      }
+      entraLogoutUrl = (await post<{ entraLogoutUrl: string | null }>('/auth/logout')).entraLogoutUrl;
     } finally {
+      closeSocket();
+      // Mark the session as ended first (observers stay attached), then drop cached private data.
       qc.setQueryData(['me'], null);
+      qc.removeQueries({ predicate: (q) => !['me', 'config', 'providers'].includes(String(q.queryKey[0])) });
     }
+    if (entraLogoutUrl) window.location.href = entraLogoutUrl;
   }, [qc]);
 
   const value = useMemo<AuthValue>(() => {

@@ -22,11 +22,12 @@
   --brand-soft: #fbeceb;
   --brand-text: #8c1017;
   --on-brand: #ffffff;
-  --success: #15803d;
+  --success: #166534;
   --success-soft: #e8f5ec;
   --warning: #a35a00;
   --warning-soft: #fdf1df;
   --danger: #b91c1c;
+  --danger-fill: #b91c1c;
   --danger-soft: #fdeaea;
   --info: #1d4ed8;
   --info-soft: #e8eefc;
@@ -50,8 +51,9 @@
   --text: #f0efec;
   --text-2: #c3c2b7;
   --text-3: #9a988f;
-  --brand: #e2474f;
-  --brand-hover: #ec6a70;
+  /* Fill (white text on it ≥ 4.5:1) and text (on dark surfaces ≥ 4.5:1) need different reds. */
+  --brand: #c22a32;
+  --brand-hover: #d13a42;
   --brand-soft: #3a1c1e;
   --brand-text: #f28b90;
   --on-brand: #ffffff;
@@ -60,6 +62,7 @@
   --warning: #fbbf24;
   --warning-soft: #33280f;
   --danger: #f87171;
+  --danger-fill: #c22a32;
   --danger-soft: #3a1a1a;
   --info: #93b4ff;
   --info-soft: #18233d;
@@ -93,6 +96,7 @@
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
+  --color-danger-fill: var(--danger-fill);
   --color-danger-soft: var(--danger-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);

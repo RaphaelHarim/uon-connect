@@ -249,7 +249,7 @@ function ScopedDashboard({ kind, scopes }: { kind: 'team' | 'department'; scopes
         {kind === 'team' && (
           <label className="text-[13px]">
             <span className="mb-1 block font-medium">Equipe</span>
-            <Select value={teamId} onChange={(e) => set("equipe", e.target.value)} className="w-64">
+            <Select value={teamId} onChange={(e) => set('equipe', e.target.value)} className="w-64">
               <option value="">Todas as minhas equipes</option>
               {scopes.teams.map((t) => (
                 <option key={t.id} value={t.id}>

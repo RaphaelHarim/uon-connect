@@ -39,7 +39,7 @@ export function BrandMark({ compact }: { compact?: boolean }) {
   return (
     <span className="flex items-baseline gap-1.5 leading-none select-none">
       <span className="text-[17px] font-bold tracking-[0.14em] text-fg">UON</span>
-      {!compact && <span className="text-[17px] font-light tracking-[0.14em] text-brand">CONNECT</span>}
+      {!compact && <span className="text-[17px] font-light tracking-[0.14em] text-brand-text">CONNECT</span>}
     </span>
   );
 }

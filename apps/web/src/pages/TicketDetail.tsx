@@ -410,7 +410,7 @@ function transitionLabel(to: string, from: string) {
   return (
     {
       triage: 'Iniciar triagem',
-      in_progress: from === 'open' ? 'Iniciar atendimento' : 'Retomar atendimento',
+      in_progress: from === 'open' || from === 'triage' ? 'Iniciar atendimento' : 'Retomar atendimento',
       waiting_requester: 'Aguardar solicitante',
       waiting_third_party: 'Aguardar terceiro',
       resolved: 'Marcar como resolvido',

@@ -1,5 +1,5 @@
 import { AlertTriangle, Inbox, Loader2, X } from 'lucide-react';
-import { Dialog as RDialog, Switch as RSwitch, Tabs as RTabs } from 'radix-ui';
+import { Dialog as RDialog, Switch as RSwitch } from 'radix-ui';
 import {
   type ButtonHTMLAttributes,
   forwardRef,
@@ -23,7 +23,7 @@ const variants: Record<Variant, string> = {
   secondary: 'bg-surface text-fg border border-line hover:bg-surface-2 shadow-card',
   ghost: 'text-fg-2 hover:bg-surface-2 hover:text-fg',
   subtle: 'bg-surface-2 text-fg hover:bg-surface-3',
-  danger: 'bg-danger text-white hover:opacity-90',
+  danger: 'bg-danger-fill text-white hover:opacity-90',
 };
 const sizes: Record<Size, string> = {
   sm: 'h-8 px-3 text-[13px] gap-1.5',
@@ -271,7 +271,7 @@ export function Avatar({ name, src, size = 32, presence }: { name: string; src?:
         <span
           aria-hidden
           className="flex size-full items-center justify-center rounded-full font-semibold text-white"
-          style={{ background: `hsl(${hue} 32% 42%)`, fontSize: size * 0.38 }}
+          style={{ background: `hsl(${hue} 34% 33%)`, fontSize: size * 0.38 }}
         >
           {initials(name)}
         </span>
@@ -377,23 +377,32 @@ export function ConfirmDialog({
 
 /* ------------------------------------------------------------------ Tabs */
 
+/**
+ * Section switcher. The selected section's content is rendered by the page itself, so this is a
+ * group of toggle buttons (aria-pressed) rather than an ARIA tablist with panels.
+ */
 export function Tabs({ value, onValueChange, items, children }: { value: string; onValueChange: (v: string) => void; items: { value: string; label: ReactNode; count?: number }[]; children?: ReactNode }) {
   return (
-    <RTabs.Root value={value} onValueChange={onValueChange}>
-      <RTabs.List className="scrollbar-thin -mx-1 mb-5 flex gap-1 overflow-x-auto border-b border-line px-1" aria-label="Seções">
+    <>
+      <div role="group" aria-label="Seções" className="scrollbar-thin -mx-1 mb-5 flex gap-1 overflow-x-auto border-b border-line px-1">
         {items.map((it) => (
-          <RTabs.Trigger
+          <button
             key={it.value}
-            value={it.value}
-            className="relative -mb-px flex items-center gap-1.5 border-b-2 border-transparent px-3 py-2.5 text-sm font-medium whitespace-nowrap text-fg-3 transition-colors hover:text-fg data-[state=active]:border-brand data-[state=active]:text-fg"
+            type="button"
+            aria-pressed={it.value === value}
+            onClick={() => onValueChange(it.value)}
+            className={cn(
+              'relative -mb-px flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors',
+              it.value === value ? 'border-brand text-fg' : 'border-transparent text-fg-3 hover:text-fg',
+            )}
           >
             {it.label}
             {it.count !== undefined && <span className="rounded bg-surface-2 px-1.5 text-xs text-fg-2">{it.count}</span>}
-          </RTabs.Trigger>
+          </button>
         ))}
-      </RTabs.List>
+      </div>
       {children}
-    </RTabs.Root>
+    </>
   );
 }
 
@@ -439,4 +448,3 @@ export function Stat({ label, value, hint, tone, icon }: { label: string; value:
   );
 }
 
-export { RTabs as TabsPrimitive };

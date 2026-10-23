@@ -148,7 +148,12 @@ function ConversationList({ activeId, onNew }: { activeId?: string; onNew: () =>
 function ConversationRow({ c, active }: { c: ConversationItem; active: boolean }) {
   const presence = usePresence(c.other?.id, c.other?.presence);
   return (
-    <Link to={`/conversas/${c.id}`} className={cn('flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2', active && 'bg-surface-2')} aria-current={active ? 'page' : undefined}>
+    <Link
+      to={`/conversas/${c.id}`}
+      aria-label={`${c.name ?? 'Conversa'}${c.type === 'group' ? ' (grupo)' : ''}${c.unread ? `, ${c.unread} não lidas` : ''}${c.lastMessage ? `, última mensagem ${formatRelative(c.lastMessage.createdAt)}` : ''}`}
+      className={cn('flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2', active && 'bg-surface-2')}
+      aria-current={active ? 'page' : undefined}
+    >
       {c.type === 'direct' && c.other ? (
         <Avatar name={c.other.displayName} src={c.other.avatarUrl} size={38} presence={presence?.status ?? null} />
       ) : (
