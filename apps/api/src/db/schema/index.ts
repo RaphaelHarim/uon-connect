@@ -26,7 +26,8 @@ const id = () => uuid('id').primaryKey().defaultRandom();
 /* ============================================================== enums */
 
 export const userStatusEnum = pgEnum('user_status', ['active', 'inactive', 'offboarded']);
-export const identityProviderEnum = pgEnum('identity_provider', ['entra', 'dev']);
+export const identityProviderEnum = pgEnum('identity_provider', ['entra', 'dev', 'local']);
+export const localTokenPurposeEnum = pgEnum('local_token_purpose', ['invite', 'reset', 'mfa']);
 export const platformRoleEnum = pgEnum('platform_role', ['supreme_admin', 'platform_admin', 'auditor']);
 export const departmentRoleEnum = pgEnum('department_role', ['member', 'agent', 'head']);
 export const teamRoleEnum = pgEnum('team_role', ['member', 'coordinator']);
@@ -221,6 +222,8 @@ export const sessions = pgTable(
     userId: uuid('user_id').notNull().references(() => users.id),
     authMethod: identityProviderEnum('auth_method').notNull(),
     csrfToken: text('csrf_token').notNull(),
+    /** True when the login included a second factor (local accounts with TOTP). */
+    mfa: boolean('mfa').notNull().default(false),
     ip: text('ip'),
     userAgent: text('user_agent'),
     createdAt: createdAt(),
@@ -240,6 +243,42 @@ export const authFlows = pgTable('auth_flows', {
   createdAt: createdAt(),
   expiresAt: ts('expires_at').notNull(),
 });
+
+/**
+ * Username/password accounts (LOCAL_AUTH_ENABLED). A row exists once an administrator invites
+ * the user; password_hash stays null until the invitation is accepted. Hashes use scrypt.
+ */
+export const localCredentials = pgTable('local_credentials', {
+  userId: uuid('user_id').primaryKey().references(() => users.id),
+  passwordHash: text('password_hash'),
+  passwordChangedAt: ts('password_changed_at'),
+  failedAttempts: integer('failed_attempts').notNull().default(0),
+  lockedUntil: ts('locked_until'),
+  /** TOTP secret encrypted with TOKEN_ENCRYPTION_KEY; active only when totp_enabled_at is set. */
+  totpSecretEnc: text('totp_secret_enc'),
+  totpEnabledAt: ts('totp_enabled_at'),
+  /** Last accepted TOTP time step, to refuse replay of the same code. */
+  totpLastStep: bigint('totp_last_step', { mode: 'number' }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/** One-time tokens: invitation and password reset links, and the second step of a 2FA login. */
+export const localAuthTokens = pgTable(
+  'local_auth_tokens',
+  {
+    /** SHA-256 of the token; the raw value is only shown once. */
+    id: text('id').primaryKey(),
+    userId: uuid('user_id').notNull().references(() => users.id),
+    purpose: localTokenPurposeEnum('purpose').notNull(),
+    createdBy: uuid('created_by').references(() => users.id),
+    attempts: integer('attempts').notNull().default(0),
+    expiresAt: ts('expires_at').notNull(),
+    usedAt: ts('used_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('local_auth_tokens_user_idx').on(t.userId, t.purpose)],
+);
 
 /** Delegated Microsoft Graph tokens, encrypted at rest (AES-256-GCM). */
 export const oauthTokens = pgTable('oauth_tokens', {

@@ -1,6 +1,6 @@
 import { DEPARTMENT_ROLE_LABELS, DEPARTMENT_ROLES, PLATFORM_ROLES, type PlatformRole, TEAM_ROLE_LABELS, TEAM_ROLES, USER_STATUS_LABELS } from '@uon/shared/browser';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, KeyRound, LogOut, ShieldCheck, Trash2 } from 'lucide-react';
+import { AlertTriangle, Copy, KeyRound, LogOut, ShieldCheck, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { Avatar, Badge, Button, Card, CardHeader, ConfirmDialog, ErrorState, Field, Input, Notice, Select, Spinner, Textarea } from '@/components/ui';
@@ -88,8 +88,8 @@ export default function AdminUserDetail() {
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   <Badge tone={u.status === 'active' ? 'success' : 'danger'}>{USER_STATUS_LABELS[u.status]}</Badge>
                   {u.isDemo && <Badge tone="info">Demonstração</Badge>}
-                  {u.identities.map((i) => <Badge key={i.provider} icon={<KeyRound className="size-3" />}>{i.provider === 'entra' ? `Entra ID (${i.subject})` : 'Login de desenvolvimento'}</Badge>)}
-                  {!u.identities.some((i) => i.provider === 'entra') && <Badge>Sem identidade Entra associada</Badge>}
+                  {u.identities.map((i) => <Badge key={i.provider} icon={<KeyRound className="size-3" />}>{i.provider === 'entra' ? `Entra ID (${i.subject})` : i.provider === 'local' ? 'Usuário e senha' : 'Login de desenvolvimento'}</Badge>)}
+                  {u.identities.length === 0 && <Badge>Ainda não entrou</Badge>}
                 </div>
                 {u.deactivationReason && <p className="mt-1 text-fg-3">Motivo da desativação: {u.deactivationReason}</p>}
               </div>
@@ -175,6 +175,7 @@ export default function AdminUserDetail() {
         </div>
 
         <div className="space-y-6">
+          <LocalAccessCard userId={u.id} editable={!protectedAccount && !self && u.status === 'active' && !u.isDemo} protectedAccount={protectedAccount} />
           <Card>
             <CardHeader title="Funções da plataforma" />
             <div className="space-y-2 p-5">
@@ -221,5 +222,87 @@ export default function AdminUserDetail() {
         {statusOpen !== 'active' && <Field label="Motivo">{(fid) => <Textarea id={fid} rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />}</Field>}
       </ConfirmDialog>
     </AdminPage>
+  );
+}
+
+interface LocalInfo {
+  localAuthEnabled: boolean;
+  emailConfigured: boolean;
+  credential: { hasPassword: boolean; passwordChangedAt: string | null; mfaEnabled: boolean; lockedUntil: string | null } | null;
+}
+
+/** Invitation / reset links for username-and-password accounts (LOCAL_AUTH_ENABLED). */
+function LocalAccessCard({ userId, editable, protectedAccount }: { userId: string; editable: boolean; protectedAccount: boolean }) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const q = useQuery({ queryKey: ['admin', 'user', userId, 'local'], queryFn: () => get<LocalInfo>(`/admin/users/${userId}/local`) });
+  const [issued, setIssued] = useState<{ purpose: 'invite' | 'reset'; link: string; expiresAt: string; emailed: boolean } | null>(null);
+  const [confirmMfa, setConfirmMfa] = useState(false);
+  const refresh = () => void qc.invalidateQueries({ queryKey: ['admin', 'user', userId] });
+  const issue = useMutation({
+    mutationFn: () => post<{ purpose: 'invite' | 'reset'; link: string; expiresAt: string; emailed: boolean }>(`/admin/users/${userId}/local-access`),
+    onSuccess: (r) => { setIssued(r); refresh(); },
+    onError: (e) => toast.error('Não foi possível gerar o link', e),
+  });
+  const unlock = useMutation({ mutationFn: () => post(`/admin/users/${userId}/local-unlock`), onSuccess: () => { refresh(); toast.success('Conta desbloqueada'); }, onError: (e) => toast.error('Operação recusada', e) });
+  const resetMfa = useMutation({ mutationFn: () => post(`/admin/users/${userId}/mfa-reset`), onSuccess: () => { setConfirmMfa(false); refresh(); toast.success('Verificação em duas etapas redefinida'); }, onError: (e) => toast.error('Operação recusada', e) });
+
+  if (!q.data?.localAuthEnabled) return null;
+  const c = q.data.credential;
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Link copiado');
+    } catch {
+      toast.error('Não foi possível copiar; selecione o link e copie manualmente.');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader title="Acesso por senha" description="Não há cadastro aberto: o acesso começa por um link de uso único." />
+      <div className="space-y-3 p-5 text-[13px]">
+        <div className="flex flex-wrap gap-1.5">
+          {!c && <Badge>Sem acesso por senha</Badge>}
+          {c && !c.hasPassword && <Badge tone="warning">Convite pendente</Badge>}
+          {c?.hasPassword && <Badge tone="success">Senha definida</Badge>}
+          {c?.hasPassword && (c.mfaEnabled ? <Badge tone="success" icon={<ShieldCheck className="size-3" />}>2FA ativa</Badge> : <Badge>2FA desativada</Badge>)}
+          {c?.lockedUntil && <Badge tone="danger">Bloqueada até {formatDateTime(c.lockedUntil)}</Badge>}
+        </div>
+        {c?.passwordChangedAt && <p className="text-fg-3">Senha alterada em {formatDateTime(c.passwordChangedAt)}</p>}
+        {protectedAccount && <p className="text-fg-3">A senha da conta fundadora só é redefinida pelo procedimento formal de recuperação (docs/RECOVERY.md).</p>}
+        {editable && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button size="sm" variant="primary" loading={issue.isPending} onClick={() => issue.mutate()}>
+              {c?.hasPassword ? 'Gerar link de nova senha' : c ? 'Gerar novo convite' : 'Gerar convite'}
+            </Button>
+            {c?.lockedUntil && <Button size="sm" loading={unlock.isPending} onClick={() => unlock.mutate()}>Desbloquear</Button>}
+            {c?.mfaEnabled && <Button size="sm" variant="ghost" onClick={() => setConfirmMfa(true)}>Redefinir 2FA</Button>}
+          </div>
+        )}
+        {issued && (
+          <div className="space-y-2 rounded-lg border border-line bg-surface-2 p-3">
+            <p className="font-medium">{issued.purpose === 'invite' ? 'Convite gerado' : 'Link de nova senha gerado'}</p>
+            <p className="text-fg-3">
+              {issued.emailed ? 'Enviado por e-mail. ' : 'O e-mail não está configurado: entregue o link à pessoa por um canal interno. '}
+              Vale até {formatDateTime(issued.expiresAt)}, funciona uma vez e substitui links anteriores. Ele não será mostrado de novo.
+            </p>
+            <div className="flex gap-2">
+              <Input readOnly value={issued.link} aria-label="Link de acesso" className="font-mono text-[12px]" onFocus={(e) => e.currentTarget.select()} />
+              <Button size="icon" aria-label="Copiar link" onClick={() => void copy(issued.link)}><Copy className="size-4" /></Button>
+            </div>
+          </div>
+        )}
+      </div>
+      <ConfirmDialog
+        open={confirmMfa}
+        onOpenChange={setConfirmMfa}
+        title="Redefinir a verificação em duas etapas?"
+        description="Use quando a pessoa perdeu o celular. As sessões dela serão encerradas e ela poderá configurar um novo aparelho após entrar com a senha."
+        tone="danger"
+        loading={resetMfa.isPending}
+        onConfirm={() => resetMfa.mutate()}
+      />
+    </Card>
   );
 }

@@ -63,8 +63,16 @@ export async function login(built: BuiltApp, who: DemoKey | string): Promise<Cli
     payload: { email, password: TEST_PASSWORD },
   });
   if (res.statusCode !== 200) throw new Error(`login failed for ${email}: ${res.statusCode} ${res.body}`);
-  const setCookie = res.headers['set-cookie'];
-  const cookie = (Array.isArray(setCookie) ? setCookie[0]! : String(setCookie)).split(';')[0]!;
+  return clientFor(built, cookieFrom(res.headers));
+}
+
+export const cookieFrom = (headers: Record<string, unknown>) => {
+  const setCookie = headers['set-cookie'] as string | string[];
+  return (Array.isArray(setCookie) ? setCookie[0]! : String(setCookie)).split(';')[0]!;
+};
+
+/** Builds a client for an existing session cookie. */
+export async function clientFor(built: BuiltApp, cookie: string): Promise<Client> {
   const me = await built.app.inject({ method: 'GET', url: `${API}/me`, headers: { cookie } });
   const meJson = me.json();
   const csrf = meJson.csrfToken as string;

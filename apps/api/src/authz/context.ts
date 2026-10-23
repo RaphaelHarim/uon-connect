@@ -1,6 +1,7 @@
 import type { DepartmentRole, Permission, PlatformRole, TeamRole } from '@uon/shared';
 import { eq } from 'drizzle-orm';
 import type { Tx } from '../db/client.js';
+import type { AuthMethod } from '../auth/sessions.js';
 import { departmentMemberships, departments, teamMemberships, teams, userRoles, users } from '../db/schema/index.js';
 import { forbidden } from '../lib/errors.js';
 import { permissionsFor } from './permissions.js';
@@ -24,13 +25,20 @@ export interface AuthContext {
   memberDepartmentIds: Set<string>;
   sessionId: string;
   csrfToken: string;
-  authMethod: 'entra' | 'dev';
+  authMethod: AuthMethod;
+  /**
+   * Local-account session without a second factor for a user holding a platform role, while
+   * LOCAL_AUTH_ADMIN_MFA_REQUIRED is on: the roles stay visible but grant no permission until
+   * the user turns on 2FA (or signs in again with it).
+   */
+  adminMfaPending: boolean;
 }
 
 export async function loadAuthContext(
   db: Tx,
   userId: string,
-  session: { id: string; csrfToken: string; authMethod: 'entra' | 'dev' },
+  session: { id: string; csrfToken: string; authMethod: AuthMethod; mfa: boolean },
+  opts: { requireAdminMfa?: boolean } = {},
 ): Promise<AuthContext | null> {
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user || user.status !== 'active') return null;
@@ -64,6 +72,7 @@ export async function loadAuthContext(
     for (const t of all) if (headDepartmentIds.has(t.departmentId)) overseenTeamIds.add(t.id);
   }
   const memberDepartmentIds = new Set([...deptMap.keys(), ...teamRows.map((t) => t.departmentId)]);
+  const adminMfaPending = !!opts.requireAdminMfa && session.authMethod === 'local' && !session.mfa && (roles.size > 0 || user.isFounder);
 
   return {
     userId,
@@ -76,7 +85,7 @@ export async function loadAuthContext(
       status: user.status,
     },
     roles,
-    permissions: permissionsFor(roles, user.isFounder),
+    permissions: adminMfaPending ? new Set() : permissionsFor(roles, user.isFounder),
     departments: deptMap,
     teams: teamMap,
     headDepartmentIds,
@@ -88,6 +97,7 @@ export async function loadAuthContext(
     sessionId: session.id,
     csrfToken: session.csrfToken,
     authMethod: session.authMethod,
+    adminMfaPending,
   };
 }
 

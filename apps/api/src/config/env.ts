@@ -54,6 +54,12 @@ const schema = z.object({
   AUTH_DEV_LOGIN_ENABLED: bool(false),
   DEV_LOGIN_PASSWORD: z.string().optional(),
 
+  LOCAL_AUTH_ENABLED: bool(false),
+  LOCAL_AUTH_ADMIN_MFA_REQUIRED: bool(true),
+  LOCAL_AUTH_MAX_ATTEMPTS: z.coerce.number().int().min(3).max(20).default(5),
+  LOCAL_AUTH_LOCK_MINUTES: z.coerce.number().int().min(1).max(24 * 60).default(15),
+  LOCAL_AUTH_INVITE_TTL_HOURS: z.coerce.number().int().min(1).max(24 * 14).default(72),
+
   ENTRA_TENANT_ID: z.string().optional(),
   ENTRA_CLIENT_ID: z.string().optional(),
   ENTRA_CLIENT_SECRET: z.string().optional(),
@@ -96,6 +102,7 @@ const schema = z.object({
 export type Env = z.infer<typeof schema> & {
   devLoginEnabled: boolean;
   entraEnabled: boolean;
+  localAuthEnabled: boolean;
   cookieSecure: boolean;
   allowedMimeTypes: string[];
   storageDir: string;
@@ -132,14 +139,19 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
   if ((e.GRAPH_CALENDAR_ENABLED || e.GRAPH_TEAMS_MEETINGS_ENABLED) && !entraEnabled) {
     throw new ConfigError('As integrações do Microsoft Graph exigem o Entra ID configurado.');
   }
-  if (e.GRAPH_CALENDAR_ENABLED || e.GRAPH_TEAMS_MEETINGS_ENABLED) {
+  if (e.GRAPH_CALENDAR_ENABLED || e.GRAPH_TEAMS_MEETINGS_ENABLED || e.LOCAL_AUTH_ENABLED) {
     const key = e.TOKEN_ENCRYPTION_KEY ? Buffer.from(e.TOKEN_ENCRYPTION_KEY, 'base64') : null;
     if (!key || key.length !== 32) {
-      throw new ConfigError('TOKEN_ENCRYPTION_KEY deve conter 32 bytes em base64 para armazenar tokens do Graph.');
+      throw new ConfigError(
+        'TOKEN_ENCRYPTION_KEY deve conter 32 bytes em base64 (tokens do Graph e segredos de 2FA das contas locais).',
+      );
     }
   }
   if (production && !e.APP_BASE_URL.startsWith('https://')) {
     throw new ConfigError('Em produção, APP_BASE_URL deve usar https://.');
+  }
+  if (production && !entraEnabled && !e.LOCAL_AUTH_ENABLED) {
+    throw new ConfigError('Nenhum método de login configurado: configure o Entra ID ou defina LOCAL_AUTH_ENABLED=true.');
   }
   if (e.TURN_URLS.length > 0 && !e.TURN_SECRET) {
     throw new ConfigError('TURN_URLS exige TURN_SECRET (credenciais temporárias do coturn).');
@@ -151,6 +163,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     ...e,
     devLoginEnabled,
     entraEnabled,
+    localAuthEnabled: e.LOCAL_AUTH_ENABLED,
     cookieSecure: e.COOKIE_SECURE === 'auto' ? production : e.COOKIE_SECURE === 'true',
     allowedMimeTypes: e.UPLOAD_ALLOWED_MIME.split(',').map((s) => s.trim()).filter(Boolean),
     storageDir: path.resolve(e.STORAGE_LOCAL_DIR),

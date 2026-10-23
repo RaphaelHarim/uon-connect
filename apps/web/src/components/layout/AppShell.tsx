@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarClock,
   ChevronDown,
+  Download,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -28,6 +29,7 @@ import { get, put } from '@/lib/api';
 import { useAuth, useMe } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 import { usePresence, useConnection } from '@/lib/realtime';
+import { promptInstall, useCanInstall } from '@/lib/install';
 import { useTheme } from '@/lib/theme';
 import { useToast } from '@/lib/toast';
 import { CommandPalette } from './CommandPalette';
@@ -128,6 +130,7 @@ function ProfileMenu() {
   const toast = useToast();
   const qc = useQueryClient();
   const presence = usePresence(me.user.id);
+  const canInstall = useCanInstall();
   const setStatus = useMutation({
     mutationFn: (status: PresenceStatus | null) => put('/me/presence', { status }),
     onSuccess: () => {
@@ -188,6 +191,11 @@ function ProfileMenu() {
           <DropdownMenu.Item className={item} onSelect={() => navigate('/perfil')}>
             <User className="size-4 text-fg-3" aria-hidden /> Meu perfil e ausências
           </DropdownMenu.Item>
+          {canInstall && (
+            <DropdownMenu.Item className={item} onSelect={() => void promptInstall()}>
+              <Download className="size-4 text-fg-3" aria-hidden /> Instalar o aplicativo
+            </DropdownMenu.Item>
+          )}
           <DropdownMenu.Item className={item} onSelect={() => void logout()}>
             <LogOut className="size-4 text-fg-3" aria-hidden /> Sair
           </DropdownMenu.Item>
@@ -241,6 +249,7 @@ export function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const location = useLocation();
   const nav = useNav();
+  const { me } = useAuth();
   useEffect(() => setMobileOpen(false), [location.pathname]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -297,6 +306,14 @@ export function AppShell() {
           </div>
         </header>
         <main id="conteudo" className="scrollbar-thin min-h-0 flex-1 overflow-y-auto pb-20 lg:pb-0">
+          {me?.adminMfaPending && (
+            <div className="border-b border-line bg-warning-soft px-4 py-2.5 text-[13px] sm:px-6" role="status">
+              Suas funções administrativas estão suspensas até você ativar a verificação em duas etapas.{' '}
+              <NavLink to="/perfil?aba=seguranca" className="font-semibold underline underline-offset-2">
+                Ativar agora
+              </NavLink>
+            </div>
+          )}
           <Outlet />
         </main>
         <MobileTabBar items={nav.slice(0, 4)} />

@@ -55,7 +55,8 @@ export interface MeResponse {
   };
   preferences: { theme: Theme; notifications: Record<string, { inApp: boolean; email: boolean }> };
   csrfToken: string;
-  authMethod: 'entra' | 'dev';
+  authMethod: 'entra' | 'dev' | 'local';
+  adminMfaPending: boolean;
 }
 
 export interface PublicConfig {

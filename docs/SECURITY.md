@@ -9,6 +9,7 @@ Para relatar uma vulnerabilidade, contate a TI da UON Consulting (não abra issu
 | --- | --- | --- | --- |
 | Autenticação corporativa | OIDC com Entra ID, *authorization code* + PKCE, `state` e `nonce` de uso único; validação de emissor, audiência, assinatura e expiração (openid-client); checagem de `tid`, `oid`, domínio e grupos | `auth/entra.ts`, `modules/auth/routes.ts` | Testes unitários das regras de *claims*; fluxo real depende do tenant (ver STATUS) |
 | Identidade | Usuário identificado por `(provedor, tenant, oid)`; e-mail só associa contas pré-cadastradas no 1º login (configurável) e **nunca concede funções** | idem | Testes |
+| Login por usuário e senha | Desligado por padrão (`LOCAL_AUTH_ENABLED`). Sem cadastro aberto: convite/redefinição por link de uso único (256 bits, só o hash no banco, no fragmento `#` da URL, invalidado ao emitir outro). Senha ≥ 12 caracteres, sem senhas comuns nem o e-mail (NIST 800-63B); hash scrypt (N=2¹⁶, r=8) com parâmetros por hash. Mesma mensagem e mesmo custo de hash para e-mail inexistente e senha errada. Bloqueio após `LOCAL_AUTH_MAX_ATTEMPTS` erros. 2FA TOTP (RFC 6238) com segredo cifrado (AES-256-GCM) e recusa de código reutilizado; desafio de 2FA expira em 5 min e aceita 5 tentativas. **Funções administrativas sem efeito** em sessão local sem 2FA (`LOCAL_AUTH_ADMIN_MFA_REQUIRED`). Nova senha encerra as sessões. Ninguém emite link/redefine 2FA da fundadora (aplicação **e** trigger) | `auth/local.ts`, `modules/auth/local-*.ts`, `drizzle/0002_local_auth.sql` | 19 testes de integração + E2E + instalação em contêiner |
 | Login de desenvolvimento | Exige `AUTH_DEV_LOGIN_ENABLED=true` + senha ≥ 8 caracteres, só aceita contas `is_demo`; **o servidor recusa iniciar** em produção com ele ligado | `config/env.ts` | Testes + contêiner de produção |
 | Sessão | Token aleatório de 256 bits em cookie `httpOnly`, `SameSite=Lax`, `Secure` e prefixo `__Host-` em produção; hash no banco; expiração absoluta e por inatividade; revogação | `auth/sessions.ts` | Testes |
 | CSRF | Cabeçalho `x-requested-with` obrigatório + token CSRF por sessão em toda requisição que altera estado | `app.ts` | Testes |
@@ -39,7 +40,11 @@ Para relatar uma vulnerabilidade, contate a TI da UON Consulting (não abra issu
 
 - **Antivírus de anexos**: não há varredura (ClamAV ou equivalente). A validação de tipo reduz o risco,
   mas não substitui antivírus. Recomendado antes de produção.
-- **TLS** é responsabilidade do proxy reverso/load balancer (ver DEPLOYMENT).
+- **TLS**: o instalador sobe o Caddy com HTTPS (certificado público automático, CA interna ou certificado da
+  empresa); com outro proxy, a TI é responsável pelo TLS (ver [INSTALAR.md](INSTALAR.md)).
+- **Senhas locais** dependem de as pessoas guardarem bem a senha e o celular da 2FA. A 2FA é obrigatória só
+  para administradores; tornar obrigatória para todos é uma decisão de política ainda em aberto.
+  Recomendação: quando o Entra ID estiver disponível, preferi-lo (políticas de acesso condicional da Microsoft).
 - **Grupos do Entra ID com excesso (overage)**: quando o token não traz os grupos, o login é **negado**
   (falha fechada). Para grandes quantidades de grupos, configurar "grupos atribuídos ao aplicativo".
 - Rate limit e presença são por processo: em múltiplas instâncias, usar armazenamento compartilhado.

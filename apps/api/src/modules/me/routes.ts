@@ -93,6 +93,7 @@ export function registerMeRoutes(app: App, deps: Deps, extras: Extras) {
       },
       csrfToken: ctx.csrfToken,
       authMethod: ctx.authMethod,
+      adminMfaPending: ctx.adminMfaPending,
     };
   });
 

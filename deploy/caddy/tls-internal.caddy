@@ -1,0 +1,2 @@
+# Certificado emitido pela CA interna do Caddy.
+tls internal

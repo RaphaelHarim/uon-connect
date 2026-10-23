@@ -1,0 +1,2 @@
+# Certificado da empresa (monte deploy/caddy/certs com cert.pem e key.pem).
+tls /certs/cert.pem /certs/key.pem

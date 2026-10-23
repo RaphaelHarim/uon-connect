@@ -13,6 +13,9 @@ const serverEnv = {
   AUTH_DEV_LOGIN_ENABLED: 'true',
   DEV_LOGIN_PASSWORD: E2E_PASSWORD,
   AUTH_RATE_LIMIT_PER_MINUTE: '1000',
+  LOCAL_AUTH_ENABLED: 'true',
+  // Test-only key (encrypts 2FA secrets in the throwaway E2E database). Never reuse it.
+  TOKEN_ENCRYPTION_KEY: 'rXmANy4QQHp1ACR/S4iDhQLxJ999WarFTmVYLR1zbNs=',
   WEB_DIST_DIR: 'apps/web/dist',
   STORAGE_LOCAL_DIR: 'test-results/e2e-storage',
   LOG_LEVEL: 'warn',

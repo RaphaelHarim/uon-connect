@@ -15,6 +15,8 @@ Legenda (sem "concluído" genérico):
 | PostgreSQL, migrações versionadas, seeds base/demo | ✅ | |
 | Sessões seguras, CSRF, rate limit, cabeçalhos de segurança | ✅ | |
 | Login de desenvolvimento (contas fictícias) | ✅ | Bloqueado em produção (verificado em contêiner) |
+| Login por usuário e senha (convite de uso único, bloqueio, troca e redefinição de senha) | ✅ | Desligado por padrão; ligado pelo instalador. Testado em integração, E2E e instalação em contêiner com HTTPS |
+| Verificação em duas etapas (TOTP) e 2FA obrigatória para funções administrativas | ✅ | Recusa de código reutilizado; redefinição pela administração (exceto fundadora) |
 | Login corporativo Microsoft Entra ID (OIDC + PKCE) | 🔌 | Regras de validação testadas; falta registrar o aplicativo no tenant da UON |
 | Autorização RBAC + escopos + por recurso | ✅ | Aplicada na API e nas consultas SQL |
 | Conta fundadora protegida (aplicação + banco) | ✅ | Bootstrap/recuperação testados em contêiner |
@@ -95,7 +97,9 @@ Legenda (sem "concluído" genérico):
 | Funcionalidade | Estado | Observações |
 | --- | --- | --- |
 | Layout responsivo, navegação móvel | ✅ | Testado em Pixel 7 (emulado) |
-| PWA instalável, atualização controlada, sem cache de dados corporativos | ✅ | Ícones provisórios |
+| PWA instalável, atualização controlada, sem cache de dados corporativos | ✅ | Ícones provisórios. Botão "Instalar o aplicativo" no menu do perfil (Edge/Chrome/Android). Guia em INSTALAR.md |
+| Instalação forçada em computadores gerenciados (Intune/GPO `WebAppInstallForceList`) | 🔌 | Documentada; depende da TI |
+| Instalador `.exe`/`.msi` (Electron/Tauri) | 📝 | O PWA cobre janela própria, ícone e atalho |
 | Safari/iOS | 🟡 | Não testado em aparelho |
 | App Android/iOS (Capacitor) e publicação em lojas | 📝 / ⛔ | Requer contas de desenvolvedor da UON |
 
@@ -114,7 +118,10 @@ Legenda (sem "concluído" genérico):
 | Item | Estado | Observações |
 | --- | --- | --- |
 | Imagem Docker e Compose de produção | ✅ | Testados localmente |
-| Backup/restauração com verificação | ✅ | Agendamento e cópia externa: responsabilidade da operação |
+| Instalador de servidor (`scripts/install.sh`): segredos, banco, papel mínimo, HTTPS (Caddy), fundadora, `--update` | ✅ | Executado do zero em contêiner (CA interna); certificado público automático depende de DNS real |
+| Restrição de acesso por IP/rede | ✅ | Testado (403 fora da lista) |
+| Implantação no Azure (VM) | 🔌 | Comandos documentados, **não executados** neste ambiente |
+| Backup/restauração com verificação | ✅ | Também para a instalação Docker (`backup-docker.sh`, testado com restauração). Agendamento e cópia externa: operação |
 | Logs estruturados, health checks, encerramento seguro | ✅ | |
 | Monitoramento externo/alertas | 📝 | Integrar com a ferramenta da UON |
 | Antivírus em anexos | 📝 | |
@@ -122,9 +129,10 @@ Legenda (sem "concluído" genérico):
 
 ## Dependências externas pendentes (o que a UON precisa fornecer)
 
-1. Registro do aplicativo no Entra ID (Tenant ID, Client ID, segredo, grupos autorizados) e consentimentos.
-2. Object ID da pessoa que será a conta fundadora.
-3. Servidor/VM ou nuvem, domínio e certificado TLS.
+1. Servidor Linux (da UON ou VM no Azure) e um domínio apontando para ele.
+2. Nome e e-mail da pessoa que será a conta fundadora.
+3. Opcional: registro do aplicativo no Entra ID (Tenant ID, Client ID, segredo, grupos) e o Object ID da
+   fundadora, para usar o login Microsoft no lugar ou além das senhas.
 4. SMTP corporativo (conta de serviço) para e-mails.
 5. VM/portas para o TURN (se chamadas entre redes diferentes forem necessárias).
 6. Logotipo e ícones oficiais da marca.

@@ -9,6 +9,7 @@ import { LoginPage } from './pages/Login';
 import { NotFoundPage } from './pages/NotFound';
 
 const DashboardPage = lazy(() => import('./pages/Dashboard'));
+const SetPasswordPage = lazy(() => import('./pages/SetPassword'));
 const TicketsPage = lazy(() => import('./pages/Tickets'));
 const TicketNewPage = lazy(() => import('./pages/TicketNew'));
 const TicketDetailPage = lazy(() => import('./pages/TicketDetail'));
@@ -41,6 +42,7 @@ const page = (node: ReactNode) => <Suspense fallback={<Spinner />}>{node}</Suspe
 
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/definir-senha', element: page(<SetPasswordPage />) },
   {
     element: (
       <RequireAuth>

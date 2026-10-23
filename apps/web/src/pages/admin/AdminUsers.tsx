@@ -2,7 +2,7 @@ import { PLATFORM_ROLES, USER_STATUS_LABELS } from '@uon/shared/browser';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, Pagination, Select, Spinner, Textarea } from '@/components/ui';
 import { get, post } from '@/lib/api';
 import { useToast } from '@/lib/toast';
@@ -102,9 +102,15 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   const [jobTitle, setJob] = useState('');
   const qc = useQueryClient();
   const toast = useToast();
+  const navigate = useNavigate();
   const create = useMutation({
     mutationFn: () => post<{ id: string }>('/admin/users', { email, displayName, jobTitle: jobTitle || null }),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['admin', 'users'] }); onOpenChange(false); toast.success('Usuário criado', 'No primeiro login pelo Entra ID a conta será associada pelo identificador do diretório.'); },
+    onSuccess: (u) => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'users'] });
+      onOpenChange(false);
+      toast.success('Usuário criado', 'Defina os vínculos e, se usar login por senha, gere o convite na ficha do usuário.');
+      navigate(`/admin/usuarios/${u.id}`);
+    },
     onError: (e) => toast.error('Não foi possível criar', e),
   });
   return (

@@ -1,9 +1,10 @@
 import { ABSENCE_VISIBILITY_LABELS, NOTIFICATION_CATEGORIES, NOTIFICATION_CATEGORY_LABELS, PRESENCE_LABELS, PRESENCE_STATUSES, type UserSummary } from '@uon/shared/browser';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Camera, LogOut, Monitor, Smartphone } from 'lucide-react';
-import { useState } from 'react';
+import { Camera, KeyRound, LogOut, Monitor, ShieldCheck, Smartphone } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { PageContainer } from '@/components/layout/AppShell';
-import { Avatar, Badge, Button, Card, CardHeader, Dialog, EmptyState, Field, Input, Notice, PageHeader, Select, Switch, Tabs, Textarea } from '@/components/ui';
+import { Avatar, Badge, Button, Card, CardHeader, Dialog, EmptyState, Field, Input, Notice, PageHeader, Select, Spinner, Switch, Tabs, Textarea } from '@/components/ui';
 import { del, get, patch, post, put, upload } from '@/lib/api';
 import { useAuth, useMe } from '@/lib/auth';
 import { formatDateTime, formatRelative } from '@/lib/format';
@@ -11,15 +12,33 @@ import { usePresence } from '@/lib/realtime';
 import { useToast } from '@/lib/toast';
 import { PeoplePicker } from './Chat';
 
+interface SecurityInfo {
+  localAuthEnabled: boolean;
+  adminMfaRequired: boolean;
+  adminMfaPending: boolean;
+  local: { hasPassword: boolean; passwordChangedAt: string | null; mfaEnabled: boolean; mfaEnabledAt: string | null } | null;
+}
+
 export default function ProfilePage() {
-  const [tab, setTab] = useState('perfil');
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState(params.get('aba') ?? 'perfil');
+  const security = useQuery({ queryKey: ['me-security'], queryFn: () => get<SecurityInfo>('/me/security') });
+  const showSecurity = !!security.data?.local?.hasPassword;
   return (
     <PageContainer>
       <PageHeader title="Meu perfil" description="Seus dados, status, ausências programadas, notificações e sessões." />
-      <Tabs value={tab} onValueChange={setTab} items={[{ value: 'perfil', label: 'Perfil e status' }, { value: 'ausencias', label: 'Ausências' }, { value: 'notificacoes', label: 'Notificações' }, { value: 'sessoes', label: 'Sessões' }]} />
+      <Tabs value={tab} onValueChange={setTab} items={[
+          { value: 'perfil', label: 'Perfil e status' },
+          { value: 'ausencias', label: 'Ausências' },
+          { value: 'notificacoes', label: 'Notificações' },
+          ...(showSecurity ? [{ value: 'seguranca', label: 'Senha e 2FA' }] : []),
+          { value: 'sessoes', label: 'Sessões' },
+        ]}
+      />
       {tab === 'perfil' && <ProfileTab />}
       {tab === 'ausencias' && <AbsencesTab />}
       {tab === 'notificacoes' && <NotificationPrefsTab />}
+      {tab === 'seguranca' && showSecurity && <SecurityTab info={security.data!} />}
       {tab === 'sessoes' && <SessionsTab />}
     </PageContainer>
   );
@@ -217,12 +236,181 @@ function SessionsTab() {
             {/Mobile|Android|iPhone/i.test(s.userAgent ?? '') ? <Smartphone className="size-4 text-fg-3" aria-hidden /> : <Monitor className="size-4 text-fg-3" aria-hidden />}
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{(s.userAgent ?? 'Dispositivo desconhecido').slice(0, 80)}</p>
-              <p className="text-fg-3">{s.authMethod === 'entra' ? 'Microsoft' : 'Desenvolvimento'} · IP {s.ip ?? '—'} · início {formatDateTime(s.createdAt)} · atividade {formatRelative(s.lastSeenAt)}</p>
+              <p className="text-fg-3">{s.authMethod === 'entra' ? 'Microsoft' : s.authMethod === 'local' ? 'Usuário e senha' : 'Desenvolvimento'} · IP {s.ip ?? '—'} · início {formatDateTime(s.createdAt)} · atividade {formatRelative(s.lastSeenAt)}</p>
             </div>
             {s.current ? <Badge tone="success">Esta sessão</Badge> : s.revokedAt ? <Badge>Encerrada</Badge> : <Button size="sm" icon={<LogOut className="size-4" />} onClick={() => revoke(s.id)}>Encerrar</Button>}
           </li>
         ))}
       </ul>
+    </Card>
+  );
+}
+
+function SecurityTab({ info }: { info: SecurityInfo }) {
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <ChangePasswordCard changedAt={info.local?.passwordChangedAt ?? null} />
+      <MfaCard enabled={!!info.local?.mfaEnabled} adminPending={info.adminMfaPending} />
+    </div>
+  );
+}
+
+function ChangePasswordCard({ changedAt }: { changedAt: string | null }) {
+  const toast = useToast();
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const mismatch = confirm.length > 0 && confirm !== next;
+  const save = useMutation({
+    mutationFn: () => post<{ revokedSessions: number }>('/me/password', { currentPassword: current, newPassword: next }),
+    onSuccess: (r) => {
+      setCurrent('');
+      setNext('');
+      setConfirm('');
+      toast.success(r.revokedSessions > 0 ? `Senha alterada. ${r.revokedSessions} outra(s) sessão(ões) encerrada(s).` : 'Senha alterada');
+    },
+  });
+  return (
+    <Card>
+      <CardHeader title="Senha" description={changedAt ? `Última alteração: ${formatDateTime(changedAt)}` : undefined} />
+      <form
+        className="space-y-4 p-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!mismatch) save.mutate();
+        }}
+      >
+        <Field label="Senha atual" required>
+          {(id) => <Input id={id} type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} required />}
+        </Field>
+        <Field label="Nova senha" hint="Pelo menos 12 caracteres." required>
+          {(id, d) => <Input id={id} aria-describedby={d} type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} required />}
+        </Field>
+        <Field label="Confirme a nova senha" error={mismatch ? 'As senhas não coincidem.' : undefined} required>
+          {(id, d) => <Input id={id} aria-describedby={d} type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />}
+        </Field>
+        {save.error && <Notice tone="danger">{(save.error as Error).message}</Notice>}
+        <Button type="submit" variant="primary" icon={<KeyRound className="size-4" />} loading={save.isPending} disabled={!current || !next || mismatch}>
+          Alterar senha
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+function QrImage({ value }: { value: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void import('qrcode').then((q) => q.toDataURL(value, { margin: 1, width: 192 })).then((url) => alive && setSrc(url));
+    return () => {
+      alive = false;
+    };
+  }, [value]);
+  return src ? <img src={src} width={192} height={192} alt="QR code para configurar o aplicativo autenticador" className="rounded-lg border border-line bg-white" /> : <Spinner />;
+}
+
+function MfaCard({ enabled, adminPending }: { enabled: boolean; adminPending: boolean }) {
+  const qc = useQueryClient();
+  const toast = useToast();
+  const { refresh } = useAuth();
+  const [setup, setSetup] = useState<{ secret: string; otpauthUri: string } | null>(null);
+  const [code, setCode] = useState('');
+  const [disableOpen, setDisableOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const done = async (msg: string) => {
+    setSetup(null);
+    setCode('');
+    setPassword('');
+    setDisableOpen(false);
+    await qc.invalidateQueries({ queryKey: ['me-security'] });
+    await refresh();
+    toast.success(msg);
+  };
+  const start = useMutation({ mutationFn: () => post<{ secret: string; otpauthUri: string }>('/me/mfa/setup'), onSuccess: setSetup, onError: (e) => toast.error('Não foi possível iniciar', e) });
+  const enable = useMutation({ mutationFn: () => post('/me/mfa/enable', { code }), onSuccess: () => done('Verificação em duas etapas ativada') });
+  const disable = useMutation({ mutationFn: () => post('/me/mfa/disable', { password, code }), onSuccess: () => done('Verificação em duas etapas desativada') });
+  const codeInput = (id: string, d?: string) => (
+    <Input id={id} aria-describedby={d} inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="w-32" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} required />
+  );
+
+  return (
+    <Card>
+      <CardHeader
+        title="Verificação em duas etapas"
+        description="Além da senha, pede um código de 6 dígitos gerado no celular (Microsoft Authenticator, Google Authenticator ou similar)."
+        actions={enabled ? <Badge tone="success" icon={<ShieldCheck className="size-3.5" />}>Ativa</Badge> : <Badge>Desativada</Badge>}
+      />
+      <div className="space-y-4 p-5">
+        {adminPending && (
+          <Notice tone="warning" title="Necessária para funções administrativas">
+            Sua conta tem uma função administrativa. Ela só fica disponível depois que você ativar a verificação em duas etapas.
+          </Notice>
+        )}
+        {!enabled && !setup && (
+          <Button variant="primary" icon={<Smartphone className="size-4" />} loading={start.isPending} onClick={() => start.mutate()}>
+            Configurar no celular
+          </Button>
+        )}
+        {setup && (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              enable.mutate();
+            }}
+          >
+            <ol className="list-decimal space-y-2 pl-5 text-[13px] text-fg-2">
+              <li>No aplicativo autenticador, adicione uma conta e leia o QR code.</li>
+              <li>Digite abaixo o código de 6 dígitos que aparecer.</li>
+            </ol>
+            <QrImage value={setup.otpauthUri} />
+            <p className="text-[12px] text-fg-3">
+              Sem câmera? Digite a chave: <code className="font-mono break-all text-fg select-all">{setup.secret}</code>
+            </p>
+            <Field label="Código de 6 dígitos" required>
+              {codeInput}
+            </Field>
+            {enable.error && <Notice tone="danger">{(enable.error as Error).message}</Notice>}
+            <div className="flex gap-2">
+              <Button type="submit" variant="primary" loading={enable.isPending} disabled={code.length !== 6}>
+                Ativar
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setSetup(null)}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        )}
+        {enabled && (
+          <>
+            <p className="text-[13px] text-fg-2">Se trocar de celular, desative e configure de novo. Se perder o celular, peça à administração para redefinir.</p>
+            <Button variant="secondary" onClick={() => setDisableOpen(true)}>
+              Desativar
+            </Button>
+          </>
+        )}
+      </div>
+      <Dialog open={disableOpen} onOpenChange={setDisableOpen} title="Desativar a verificação em duas etapas" description="Confirme com sua senha e um código atual do aplicativo.">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            disable.mutate();
+          }}
+        >
+          <Field label="Senha" required>
+            {(id) => <Input id={id} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />}
+          </Field>
+          <Field label="Código de 6 dígitos" required>
+            {codeInput}
+          </Field>
+          {disable.error && <Notice tone="danger">{(disable.error as Error).message}</Notice>}
+          <Button type="submit" variant="danger" loading={disable.isPending} disabled={!password || code.length !== 6}>
+            Desativar
+          </Button>
+        </form>
+      </Dialog>
     </Card>
   );
 }

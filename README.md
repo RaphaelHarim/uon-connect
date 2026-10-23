@@ -9,11 +9,15 @@ com auditoria imutável e proteção da conta fundadora — com autorização ap
 > [docs/STATUS.md](docs/STATUS.md) sejam configuradas (Entra ID, SMTP, TURN, servidor com TLS,
 > backups agendados) e a homologação com dados reais seja concluída.
 
+> **Colocar no ar para a UON (servidor próprio ou Azure) e instalar como aplicativo:** veja
+> [docs/INSTALAR.md](docs/INSTALAR.md). Um comando (`scripts/install.sh`) sobe banco, aplicativo e HTTPS e cria a
+> conta fundadora; as pessoas entram por convite, com senha e verificação em duas etapas.
+
 ## Sumário
 
 - [Visão rápida](#visão-rápida) · [Requisitos](#requisitos) · [Instalação (desenvolvimento)](#instalação-desenvolvimento)
 - [Comandos](#comandos) · [Contas de demonstração](#contas-de-demonstração) · [Estrutura do projeto](#estrutura-do-projeto)
-- Documentação: [Arquitetura](docs/ARCHITECTURE.md) · [Segurança](docs/SECURITY.md) · [Banco de dados](docs/DATABASE.md) ·
+- Documentação: [**Colocar no ar e instalar**](docs/INSTALAR.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Segurança](docs/SECURITY.md) · [Banco de dados](docs/DATABASE.md) ·
   [Implantação](docs/DEPLOYMENT.md) · [Integrações](docs/INTEGRATIONS.md) · [Testes](docs/TESTING.md) ·
   [Recuperação e backup](docs/RECOVERY.md) · [Privacidade (LGPD)](docs/PRIVACY.md) · [Mobile/PWA](docs/MOBILE.md) ·
   [API](docs/API.md) · [Estado das funcionalidades](docs/STATUS.md) · [Apresentação executiva](docs/APRESENTACAO-EXECUTIVA.md) ·
@@ -28,8 +32,8 @@ com auditoria imutável e proteção da conta fundadora — com autorização ap
 | Tempo real | Socket.IO (mesma sessão da API) | Mensagens, presença, notificações e sinalização WebRTC com reconexão |
 | Banco | PostgreSQL 16 + Drizzle ORM (migrações SQL versionadas) | Integridade, triggers de proteção, busca textual em português |
 | Vídeo | WebRTC (malha, até 6 pessoas) + TURN opcional (coturn) | Funciona sem serviço pago; Teams para reuniões maiores |
-| Testes | Vitest (94 testes, banco real) + Playwright (13 cenários E2E, incl. chamada WebRTC e axe) | Fluxos críticos e regras de acesso verificados |
-| Implantação | Docker (imagem única) + Docker Compose | API serve a interface compilada na mesma origem |
+| Testes | Vitest (113 testes, banco real) + Playwright (14 cenários E2E, incl. chamada WebRTC, convite + 2FA e axe) | Fluxos críticos e regras de acesso verificados |
+| Implantação | Docker (imagem única) + Docker Compose + Caddy (HTTPS) | Instalador de um comando; API serve a interface na mesma origem |
 
 ## Requisitos
 
