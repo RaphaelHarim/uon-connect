@@ -26,8 +26,8 @@
     "db:migrate": "npm run db:migrate --workspace @uon/api",
     "db:generate": "npm run db:generate --workspace @uon/api",
     "db:seed:base": "npm run db:seed:base --workspace @uon/api",
-    "db:seed:demo": "npm run db:seed:demo --workspace @uon/api",
-    "bootstrap:founder": "npm run bootstrap:founder --workspace @uon/api",
+    "db:seed:demo": "npm run db:seed:demo --workspace @uon/api --",
+    "bootstrap:founder": "npm run bootstrap:founder --workspace @uon/api --",
     "audit:verify": "npm run audit:verify --workspace @uon/api"
   },
   "devDependencies": {
@@ -40,6 +40,7 @@
     "globals": "^16.0.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.0",
-    "vitest": "^4.1.12"
+    "vitest": "^4.1.12",
+    "vite": "^7.3.7"
   }
 }

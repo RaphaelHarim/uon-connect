@@ -22,6 +22,10 @@ export default tseslint.config(
     rules: { 'react-hooks/rules-of-hooks': 'error', 'react-hooks/exhaustive-deps': 'warn' },
   },
   {
+    files: ['apps/web/public/**/*.js'],
+    languageOptions: { globals: { ...globals.browser }, sourceType: 'script' },
+  },
+  {
     // Test helpers deal with loosely typed JSON responses.
     files: ['**/*.test.ts', '**/test/**/*.ts', 'e2e/**/*.ts'],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },
