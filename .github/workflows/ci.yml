@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: uon
+          POSTGRES_PASSWORD: uon_dev_password
+          POSTGRES_DB: uon_connect
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U uon" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://uon:uon_dev_password@localhost:5432/uon_connect_test
+      E2E_DATABASE_URL: postgres://uon:uon_dev_password@localhost:5432/uon_connect_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Criar bancos de teste
+        run: |
+          PGPASSWORD=uon_dev_password psql -h localhost -U uon -d uon_connect -c 'CREATE DATABASE uon_connect_test'
+          PGPASSWORD=uon_dev_password psql -h localhost -U uon -d uon_connect -c 'CREATE DATABASE uon_connect_e2e'
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report

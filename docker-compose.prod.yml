@@ -1,0 +1,66 @@
+# Implantação de referência em um único servidor (Docker Compose).
+# Coloque um proxy reverso com TLS (Caddy, Nginx, Traefik ou o load balancer da nuvem) na frente do serviço `app`.
+# Variáveis: copie .env.example para .env.production e preencha. Veja docs/DEPLOYMENT.md.
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_OWNER_USER:-uon_owner}
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?defina POSTGRES_OWNER_PASSWORD}
+      POSTGRES_DB: uon_connect
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d uon_connect"]
+      interval: 10s
+      retries: 10
+
+  # Executa as migrações com o usuário proprietário (DDL) e encerra.
+  migrate:
+    image: ${UON_IMAGE:-uon-connect:latest}
+    build: .
+    command: ["node", "apps/api/dist/migrate.js"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_OWNER_USER:-uon_owner}:${POSTGRES_OWNER_PASSWORD}@postgres:5432/uon_connect
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  app:
+    image: ${UON_IMAGE:-uon-connect:latest}
+    build: .
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      # A aplicação usa um papel SEM privilégios de DDL e sem permissão de alterar a auditoria
+      # (crie-o com docker/postgres/app-role.sql após a primeira migração).
+      DATABASE_URL: postgres://${POSTGRES_APP_USER:-uon_app}:${POSTGRES_APP_PASSWORD:?defina POSTGRES_APP_PASSWORD}@postgres:5432/uon_connect
+      NODE_ENV: production
+      TRUST_PROXY: "true"
+    volumes:
+      - files:/data
+    ports: ["127.0.0.1:3000:3000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  # Opcional: TURN para chamadas de vídeo entre redes diferentes (docker compose --profile turn up).
+  coturn:
+    image: coturn/coturn:4.6
+    profiles: ["turn"]
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -n
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET:?defina TURN_SECRET}
+      - --realm=${TURN_REALM:-uon-connect}
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49200
+      - --no-cli
+      - --fingerprint
+
+volumes:
+  pgdata:
+  files:
