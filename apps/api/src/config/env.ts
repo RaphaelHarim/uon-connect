@@ -79,6 +79,9 @@ const schema = z.object({
   UPLOAD_MAX_FILE_MB: z.coerce.number().min(1).max(500).default(20),
   UPLOAD_USER_QUOTA_MB: z.coerce.number().min(10).max(100_000).default(2048),
   UPLOAD_ALLOWED_MIME: z.string().default(DEFAULT_MIME),
+  /** Installers offered on the /baixar page (uploaded by administrators). */
+  DOWNLOADS_DIR: z.string().default('./storage/downloads'),
+  DOWNLOAD_MAX_MB: z.coerce.number().min(10).max(2000).default(500),
 
   EMAIL_ENABLED: bool(false),
   SMTP_HOST: z.string().optional(),
@@ -106,6 +109,7 @@ export type Env = z.infer<typeof schema> & {
   cookieSecure: boolean;
   allowedMimeTypes: string[];
   storageDir: string;
+  downloadsDir: string;
   emailConfigured: boolean;
 };
 
@@ -167,6 +171,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     cookieSecure: e.COOKIE_SECURE === 'auto' ? production : e.COOKIE_SECURE === 'true',
     allowedMimeTypes: e.UPLOAD_ALLOWED_MIME.split(',').map((s) => s.trim()).filter(Boolean),
     storageDir: path.resolve(e.STORAGE_LOCAL_DIR),
+    downloadsDir: path.resolve(e.DOWNLOADS_DIR),
     emailConfigured,
   };
 }

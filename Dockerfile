@@ -22,6 +22,7 @@ ENV NODE_ENV=production \
     WEB_DIST_DIR=/app/apps/web/dist \
     MIGRATIONS_DIR=/app/apps/api/drizzle \
     STORAGE_LOCAL_DIR=/data/files \
+    DOWNLOADS_DIR=/data/downloads \
     HOST=0.0.0.0 \
     PORT=3000
 WORKDIR /app
@@ -36,7 +37,7 @@ RUN --mount=type=secret,id=extra_ca,required=false \
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/api/drizzle apps/api/drizzle
 COPY --from=build /app/apps/web/dist apps/web/dist
-RUN mkdir -p /data/files && chown -R node:node /data
+RUN mkdir -p /data/files /data/downloads && chown -R node:node /data
 USER node
 EXPOSE 3000
 VOLUME ["/data"]

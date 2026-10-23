@@ -26,6 +26,16 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser }, sourceType: 'script' },
   },
   {
+    // Desktop app (Electron, CommonJS) and the local setup pages of the installers.
+    files: ['clients/desktop/**/*.js'],
+    languageOptions: { sourceType: 'commonjs' },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    files: ['clients/desktop/src/setup.js', 'clients/desktop/src/setup-preload.js', 'clients/android/www-src/**/*.js'],
+    languageOptions: { globals: { ...globals.browser }, sourceType: 'script' },
+  },
+  {
     // Test helpers deal with loosely typed JSON responses.
     files: ['**/*.test.ts', '**/test/**/*.ts', 'e2e/**/*.ts'],
     rules: { '@typescript-eslint/no-explicit-any': 'off' },

@@ -1,0 +1,17 @@
+{
+  "name": "uon-connect-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "UON CONNECT para Android (Capacitor)",
+  "scripts": {
+    "prepare-app": "node scripts/prepare.mjs",
+    "patch-android": "node scripts/patch-android.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/core": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}

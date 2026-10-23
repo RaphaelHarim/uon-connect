@@ -83,7 +83,7 @@ export const patch = <T>(path: string, body?: unknown) => api<T>(path, { method:
 export const del = <T>(path: string, body?: unknown) => api<T>(path, { method: 'DELETE', body });
 
 /** Upload a single file with progress reporting (fetch can't report upload progress). */
-export function upload<T>(path: string, file: File, onProgress?: (fraction: number) => void): Promise<T> {
+export function upload<T>(path: string, file: File, onProgress?: (fraction: number) => void, fields: Record<string, string> = {}): Promise<T> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `${API_PREFIX}${path}`);
@@ -105,6 +105,8 @@ export function upload<T>(path: string, file: File, onProgress?: (fraction: numb
     };
     xhr.onerror = () => reject(new ApiError(0, 'network_error', 'Falha de rede durante o envio. O arquivo não foi enviado.'));
     const form = new FormData();
+    // Fields go before the file so the server can read them when the file part arrives.
+    for (const [k, v] of Object.entries(fields)) form.append(k, v);
     form.append('file', file);
     xhr.send(form);
   });

@@ -1,0 +1,4 @@
+{
+  "//": "Endereço do UON CONNECT embutido nos instaladores (Windows, Mac e Android). Deixe vazio para perguntar na primeira abertura (computador).",
+  "serverUrl": ""
+}

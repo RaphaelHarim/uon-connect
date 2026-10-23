@@ -8,6 +8,7 @@ import { registerLocalAuthRoutes } from './modules/auth/local-routes.js';
 import { registerAuthRoutes } from './modules/auth/routes.js';
 import { registerChatRoutes } from './modules/chat/routes.js';
 import { registerDashboardRoutes } from './modules/dashboards/routes.js';
+import { registerDownloadRoutes } from './modules/downloads/routes.js';
 import { registerFileRoutes } from './modules/files/routes.js';
 import { registerIntegrationRoutes } from './modules/integrations/routes.js';
 import { registerMeRoutes } from './modules/me/routes.js';
@@ -36,6 +37,7 @@ export function registerRoutes(app: App, deps: Deps, extras: Extras) {
   registerDashboardRoutes(app, deps);
   registerChatRoutes(app, deps);
   registerFileRoutes(app, deps);
+  registerDownloadRoutes(app, deps);
   registerPresenceRoutes(app, deps);
   registerMeetingRoutes(app, deps, extras);
   registerNotificationRoutes(app, deps);
