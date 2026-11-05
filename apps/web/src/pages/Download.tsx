@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Apple, Download as DownloadIcon, Globe, Monitor, Smartphone } from 'lucide-react';
+import { Apple, Download as DownloadIcon, Globe, Monitor, ShieldCheck, Smartphone } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { BrandMark } from '@/components/layout/AppShell';
@@ -136,6 +136,43 @@ export default function DownloadPage() {
                   <InstallerCard platform={p} item={byPlatform.get(p)} primary={mine === p} />
                 </div>
               ))}
+            </div>
+            <div className="rounded-2xl border border-line bg-surface p-5">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="size-5 text-fg-2" aria-hidden />
+                <h2 className="font-semibold">Certificado de segurança (rede interna)</h2>
+              </div>
+              <p className="mt-2 text-[13px] text-fg-2">
+                O UON CONNECT roda só na rede interna da UON, com um certificado próprio (não emitido por uma
+                autoridade pública). Por isso o navegador e o aplicativo mostram um aviso de segurança até você
+                instalar este certificado raiz — uma vez só, por computador ou celular.
+              </p>
+              <a href="/certs/uon-connect-ca-root.crt" download className="mt-3 inline-block">
+                <Button variant="secondary" icon={<DownloadIcon className="size-4" />}>
+                  Baixar certificado (.crt)
+                </Button>
+              </a>
+              <details className="mt-3 text-[13px] text-fg-2">
+                <summary className="cursor-pointer font-medium text-fg">Como instalar</summary>
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <p className="font-medium text-fg">Windows</p>
+                    <p>Clique duas vezes no arquivo baixado → Instalar Certificado → Máquina Local → "Colocar todos os certificados no repositório seguinte" → Autoridades de Certificação Raiz Confiáveis.</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-fg">Mac</p>
+                    <p>Abra o arquivo (abre no Acesso às Chaves) → categoria Sistema → clique duas vezes no certificado → Confiar → "Sempre confiar".</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-fg">Android</p>
+                    <p>Abra o arquivo baixado e instale; depois, em Configurações › Segurança › Criptografia e credenciais, confirme que ele está confiável.</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-fg">iPhone / iPad</p>
+                    <p>Abra o arquivo (instala um perfil) → Ajustes › Perfil baixado › Instalar. Depois, em Ajustes › Geral › Informações › Config. de Confiança de Certificado, ative a confiança total para ele.</p>
+                  </div>
+                </div>
+              </details>
             </div>
             <div className="rounded-2xl border border-line bg-surface p-5">
               <div className="flex items-center gap-2.5">

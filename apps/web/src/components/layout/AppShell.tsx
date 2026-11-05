@@ -37,11 +37,13 @@ import { CommandPalette } from './CommandPalette';
 export function BrandMark({ compact }: { compact?: boolean }) {
   const { config } = useAuth();
   if (config?.brand.logoUrl) return <img src={config.brand.logoUrl} alt="UON Consulting" className="h-7 w-auto max-w-[150px] object-contain" />;
-  // No official logo configured: a plain wordmark in type, never an invented logo.
+  // No custom override configured in this server: use the official UON Consulting logo
+  // bundled with the app, switching the light/dark variant with the active theme.
+  const cls = compact ? 'h-6 w-auto max-w-[120px] object-contain' : 'h-7 w-auto max-w-[150px] object-contain';
   return (
-    <span className="flex items-baseline gap-1.5 leading-none select-none">
-      <span className="text-[17px] font-bold tracking-[0.14em] text-fg">UON</span>
-      {!compact && <span className="text-[17px] font-light tracking-[0.14em] text-brand-text">CONNECT</span>}
+    <span className="inline-flex">
+      <img src="/brand/uon-logo-light.png" alt="UON Consulting" className={`brand-logo-light ${cls}`} />
+      <img src="/brand/uon-logo-dark.png" alt="UON Consulting" className={`brand-logo-dark ${cls}`} />
     </span>
   );
 }

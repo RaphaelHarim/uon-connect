@@ -3,8 +3,9 @@
 
 /*
  * UON CONNECT design tokens.
- * Neutral, warm greys for reading surfaces; the institutional red is an accent only
- * (primary actions, active navigation, focus) — never large fills.
+ * Neutral, warm greys for reading surfaces; the UON institutional navy is an accent only
+ * (primary actions, active navigation, focus) — never large fills. Colors taken from
+ * uongroup.com (navy #002D56, hover blue #13447E, link blue #056BAD, accent orange #FF552A).
  */
 :root {
   color-scheme: light;
@@ -17,10 +18,10 @@
   --text: #18181b;
   --text-2: #4b4a46;
   --text-3: #6f6d66;
-  --brand: #a8141c;
-  --brand-hover: #8c1017;
-  --brand-soft: #fbeceb;
-  --brand-text: #8c1017;
+  --brand: #002d56;
+  --brand-hover: #13447e;
+  --brand-soft: #e8f1fa;
+  --brand-text: #056bad;
   --on-brand: #ffffff;
   --success: #166534;
   --success-soft: #e8f5ec;
@@ -32,7 +33,7 @@
   --info: #1d4ed8;
   --info-soft: #e8eefc;
   --series-1: #2a78d6;
-  --series-2: #eb6834;
+  --series-2: #ff552a;
   --series-3: #1baf7a;
   --bar: #2a78d6;
   --grid: #ebe9e4;
@@ -51,11 +52,11 @@
   --text: #f0efec;
   --text-2: #c3c2b7;
   --text-3: #9a988f;
-  /* Fill (white text on it ≥ 4.5:1) and text (on dark surfaces ≥ 4.5:1) need different reds. */
-  --brand: #c22a32;
-  --brand-hover: #d13a42;
-  --brand-soft: #3a1c1e;
-  --brand-text: #f28b90;
+  /* Fill (white text on it ≥ 4.5:1) and text (on dark surfaces ≥ 4.5:1) need different blues. */
+  --brand: #2f74b8;
+  --brand-hover: #4a8ed6;
+  --brand-soft: #16263d;
+  --brand-text: #8ec4f2;
   --on-brand: #ffffff;
   --success: #4ade80;
   --success-soft: #16301f;
@@ -67,7 +68,7 @@
   --info: #93b4ff;
   --info-soft: #18233d;
   --series-1: #3987e5;
-  --series-2: #d95926;
+  --series-2: #ff7a4d;
   --series-3: #199e70;
   --bar: #3987e5;
   --grid: #2a2a28;
@@ -161,4 +162,15 @@ body {
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Brand logo: navy mark on light backgrounds, white mark on dark backgrounds. */
+.brand-logo-dark {
+  display: none;
+}
+:root[data-theme='dark'] .brand-logo-light {
+  display: none;
+}
+:root[data-theme='dark'] .brand-logo-dark {
+  display: inline-block;
 }
