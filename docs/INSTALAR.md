@@ -11,11 +11,9 @@ O UON CONNECT funciona como um site com endereço próprio, por exemplo
 administração. Depois de instalado, ele abre em janela própria, com ícone no menu Iniciar, na barra de
 tarefas ou na tela do celular, como um programa.
 
-> **Sobre "executável":** o UON CONNECT é instalado como PWA, que é o mecanismo padrão do Edge, do Chrome
-> e do Android para instalar sites como aplicativos. Ele não é um arquivo `.exe`. Para o usuário, a
-> experiência é a mesma de um programa: janela própria, ícone e atalho na área de trabalho. Um instalador
-> `.exe`/`.msi` de verdade, empacotado com Electron ou Tauri, seria uma evolução separada e **não está
-> implementado** (ver [STATUS.md](STATUS.md)).
+> **Instaladores de verdade:** além da instalação pelo navegador (abaixo), há instaladores `.exe` (Windows),
+> `.dmg` (Mac) e `.apk` (Android), oferecidos na página **`/baixar`** do próprio UON CONNECT. Ver
+> [INSTALADORES.md](INSTALADORES.md). **Servidor com Windows 11:** ver [SERVIDOR-WINDOWS.md](SERVIDOR-WINDOWS.md).
 
 ---
 

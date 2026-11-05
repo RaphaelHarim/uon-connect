@@ -17,8 +17,10 @@ O `docker-compose.yml` de desenvolvimento cria ambos.
 | Conjunto | Resultado |
 | --- | --- |
 | `packages/shared` (presença) | 3/3 ✔ |
-| API — integração e unidade | **110/110 ✔** em 7 arquivos |
-| E2E Playwright (Chromium desktop + Pixel 7) | **14/14 ✔** (ver nota sobre o teste de grupo) |
+| API — integração e unidade | **114/114 ✔** em 8 arquivos |
+| E2E Playwright (Chromium desktop + Pixel 7) | **15/15 ✔** |
+| App de computador (Electron) contra o servidor, em Linux/Xvfb: endereço, login, bloqueio externo, permissões, sessão lembrada | ✔ (script manual; lógica com `node --test`, 3/3) |
+| Build dos instaladores no GitHub Actions (`.exe`, `.dmg`, `.apk`) | ✔ (instalação em aparelhos reais: não testada) |
 | TypeScript estrito (shared, api, web) | ✔ sem erros |
 | ESLint | ✔ sem erros |
 | Build de produção (API + web/PWA) | ✔ |
@@ -29,8 +31,9 @@ O `docker-compose.yml` de desenvolvimento cria ambos.
 | `npm audit --omit=dev` | 0 vulnerabilidades |
 
 Notas desta rodada:
-- `chat.spec.ts` › *grupo: criação e participantes* falhou 1 vez em 10 execuções seguidas (as outras 9
-  passaram). A causa não foi isolada; fica registrado como possível instabilidade do teste.
+- A instabilidade de `chat.spec.ts` tinha causa real: uma mensagem que chegava durante o primeiro
+  carregamento da conversa só aparecia após recarregar. Corrigido (`refetchFresh` em `lib/realtime.tsx`);
+  12/12 repetições passam. O teste agora procura a mensagem dentro da conversa, não na prévia da lista.
 - No teste de instalação com `--tls internal`, o service worker do PWA **não** registra porque o navegador
   de teste não confia na CA interna (comportamento esperado do navegador). Com certificado público ou com a
   raiz da CA interna instalada nos computadores, o PWA registra normalmente.

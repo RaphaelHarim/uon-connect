@@ -1,0 +1,108 @@
+name: Instaladores (Windows, Mac, Android)
+
+# Gera os instaladores do UON CONNECT. O endereço do servidor vem de clients/server.json.
+# Baixe os arquivos na página da execução (Artifacts) e publique em Administração › Instaladores.
+on:
+  push:
+    paths: ['clients/**', '.github/workflows/clients.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults: { run: { working-directory: clients/desktop } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm test
+      - run: npx electron-builder --win --publish never
+      - name: Conferir instalador
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem dist -Filter 'UON-CONNECT-Setup-*.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'Instalador não gerado' }
+          "{0} — {1:N1} MB — SHA-256 {2}" -f $exe.Name, ($exe.Length / 1MB), (Get-FileHash $exe.FullName).Hash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UON-CONNECT-Windows
+          path: clients/desktop/dist/UON-CONNECT-Setup-*.exe
+          if-no-files-found: error
+
+  mac:
+    runs-on: macos-latest
+    defaults: { run: { working-directory: clients/desktop } }
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm test
+      - run: npx electron-builder --mac --publish never
+      - name: Conferir instalador
+        run: |
+          ls -la dist/*.dmg
+          hdiutil imageinfo dist/*.dmg | head -5
+          codesign -dv "dist/mac-universal/UON CONNECT.app" 2>&1 | head -5 || true
+          shasum -a 256 dist/*.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UON-CONNECT-Mac
+          path: clients/desktop/dist/UON-CONNECT-*.dmg
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: clients/android } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21' }
+      - run: npm ci
+      - run: node scripts/prepare.mjs
+      - run: npx cap add android
+      - name: Chave de assinatura (opcional, segredo ANDROID_KEYSTORE_BASE64)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/uon.keystore"
+            echo "UON_KEYSTORE_FILE=$RUNNER_TEMP/uon.keystore" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Sem ANDROID_KEYSTORE_BASE64: o APK sai com assinatura de depuração (atualizações exigirão reinstalar)."
+          fi
+      - run: node scripts/patch-android.mjs
+      - name: Compilar APK
+        working-directory: clients/android/android
+        env:
+          UON_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          UON_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          UON_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          if [ -n "$UON_KEYSTORE_FILE" ]; then
+            ./gradlew --no-daemon assembleRelease
+            cp app/build/outputs/apk/release/app-release.apk ../UON-CONNECT.apk
+          else
+            ./gradlew --no-daemon assembleDebug
+            cp app/build/outputs/apk/debug/app-debug.apk ../UON-CONNECT.apk
+          fi
+      - name: Conferir APK
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/aapt2" dump badging UON-CONNECT.apk | grep -E "^package|uses-permission|application-label:" || true
+          "$BT/apksigner" verify --print-certs UON-CONNECT.apk | head -3
+          sha256sum UON-CONNECT.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UON-CONNECT-Android
+          path: clients/android/UON-CONNECT.apk
+          if-no-files-found: error

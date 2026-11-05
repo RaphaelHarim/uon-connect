@@ -1,0 +1,55 @@
+{
+  "name": "uon-connect-desktop",
+  "productName": "UON CONNECT",
+  "version": "1.0.0",
+  "description": "UON CONNECT para computador (Windows e Mac)",
+  "author": "UON Consulting",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:linux": "electron-builder --linux dir --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.6.0",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "uonconnect.desktop",
+    "productName": "UON CONNECT",
+    "copyright": "UON Consulting",
+    "files": ["src/**/*", "package.json"],
+    "extraResources": [{ "from": "../server.json", "to": "server.json" }],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "artifactName": "UON-CONNECT-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "UON CONNECT",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "icon": "build/icon.png",
+      "category": "public.app-category.business",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "extendInfo": {
+        "NSCameraUsageDescription": "O UON CONNECT usa a câmera nas chamadas de vídeo.",
+        "NSMicrophoneUsageDescription": "O UON CONNECT usa o microfone nas chamadas."
+      },
+      "artifactName": "UON-CONNECT-${version}.${ext}"
+    },
+    "linux": { "target": ["dir"], "icon": "build/icon.png", "category": "Office" }
+  }
+}

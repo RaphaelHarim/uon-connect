@@ -18,6 +18,7 @@ const serverEnv = {
   TOKEN_ENCRYPTION_KEY: 'rXmANy4QQHp1ACR/S4iDhQLxJ999WarFTmVYLR1zbNs=',
   WEB_DIST_DIR: 'apps/web/dist',
   STORAGE_LOCAL_DIR: 'test-results/e2e-storage',
+  DOWNLOADS_DIR: 'test-results/e2e-downloads',
   LOG_LEVEL: 'warn',
 };
 

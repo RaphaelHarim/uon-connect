@@ -1,4 +1,4 @@
-import { Building2, FileClock, Plug, Settings, Ticket, Users } from 'lucide-react';
+import { Building2, Download, FileClock, Plug, Settings, Ticket, Users } from 'lucide-react';
 import { Link } from 'react-router';
 import { PageContainer } from '@/components/layout/AppShell';
 import { Card, EmptyState, PageHeader } from '@/components/ui';
@@ -11,6 +11,7 @@ const SECTIONS: { to: string; title: string; description: string; icon: typeof U
   { to: '/admin/chamados', title: 'Configuração de chamados', description: 'Categorias, prioridades, status, transições, calendário e SLA.', icon: Ticket, permission: 'tickets.config.manage' },
   { to: '/admin/auditoria', title: 'Auditoria', description: 'Registro imutável de operações relevantes e verificação de integridade.', icon: FileClock, permission: 'audit.read' },
   { to: '/admin/integracoes', title: 'Integrações', description: 'Microsoft 365, e-mail, armazenamento e TURN — estado real de cada uma.', icon: Plug, permission: 'integrations.read' },
+  { to: '/admin/instaladores', title: 'Instaladores', description: 'Arquivos para Windows, Mac e Android oferecidos na página de download.', icon: Download, permission: 'settings.manage' },
   { to: '/admin/configuracoes', title: 'Políticas da plataforma', description: 'Regras de conversas, reabertura e encerramento automático.', icon: Settings, permission: 'settings.manage' },
 ];
 

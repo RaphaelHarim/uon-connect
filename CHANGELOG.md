@@ -2,6 +2,19 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versionamento semântico.
 
+## [0.3.0] — 2026-10-23
+
+### Adicionado
+- Página pública `/baixar` com o instalador certo para cada aparelho e instruções (inclusive iPhone).
+- Administração › Instaladores (envio de `.exe`, `.dmg` e `.apk`, conferência do tipo real, SHA-256).
+- App de computador (Electron) e app Android (Capacitor) em `clients/`, gerados pelo workflow *Instaladores*.
+- Túnel Cloudflare opcional (`--tunnel-token`) para acesso de fora sem abrir portas.
+- Guia e script para servidor Windows 11 (WSL2 + Docker): `docs/SERVIDOR-WINDOWS.md`, `scripts/windows/preparar-servidor.ps1`.
+
+### Corrigido
+- Mensagem recebida durante o primeiro carregamento de uma conversa não aparecia até recarregar a página
+  (a atualização reaproveitava a requisição iniciada antes da mensagem existir).
+
 ## [0.2.0] — 2026-10-23
 
 ### Adicionado

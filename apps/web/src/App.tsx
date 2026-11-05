@@ -10,6 +10,8 @@ import { NotFoundPage } from './pages/NotFound';
 
 const DashboardPage = lazy(() => import('./pages/Dashboard'));
 const SetPasswordPage = lazy(() => import('./pages/SetPassword'));
+const DownloadPage = lazy(() => import('./pages/Download'));
+const AdminDownloads = lazy(() => import('./pages/admin/AdminDownloads'));
 const TicketsPage = lazy(() => import('./pages/Tickets'));
 const TicketNewPage = lazy(() => import('./pages/TicketNew'));
 const TicketDetailPage = lazy(() => import('./pages/TicketDetail'));
@@ -43,6 +45,7 @@ const page = (node: ReactNode) => <Suspense fallback={<Spinner />}>{node}</Suspe
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/definir-senha', element: page(<SetPasswordPage />) },
+  { path: '/baixar', element: page(<DownloadPage />) },
   {
     element: (
       <RequireAuth>
@@ -71,6 +74,7 @@ const router = createBrowserRouter([
       { path: 'admin/auditoria', element: page(<AdminAudit />) },
       { path: 'admin/integracoes', element: page(<AdminIntegrations />) },
       { path: 'admin/configuracoes', element: page(<AdminSettings />) },
+      { path: 'admin/instaladores', element: page(<AdminDownloads />) },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

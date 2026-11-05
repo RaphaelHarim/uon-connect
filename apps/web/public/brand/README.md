@@ -1,8 +1,13 @@
 # Marca
 
-Coloque aqui o logotipo **oficial** fornecido pela UON Consulting (preferencialmente SVG) e
-configure `BRAND_LOGO_URL=/brand/<arquivo>.svg` no servidor. Enquanto não houver arquivo
-oficial, a interface mostra apenas o nome "UON CONNECT" em texto, sem desenho de logotipo.
+Logotipo oficial da UON Consulting (extraído de uongroup.com em 2026-10-27):
 
-`favicon.svg` e os ícones em `public/icons/` são **provisórios** (dois anéis entrelaçados,
-representando "conexão") e devem ser substituídos pelos ícones aprovados pela marca.
+- `uon-logo-dark.png` — versão branca ("UON CONSULTING"), usada em fundos escuros (tema dark).
+- `uon-logo-light.png` — versão azul-marinho ("uon"), usada em fundos claros (tema light).
+
+Escolhidas automaticamente pelo componente `BrandMark` (`apps/web/src/components/layout/AppShell.tsx`)
+conforme o tema ativo. Para usar um logotipo diferente (ex.: atualização de marca), defina
+`BRAND_LOGO_URL` no servidor — isso substitui as duas versões por uma imagem única.
+
+`favicon.svg` e os ícones em `public/icons/` usam o símbolo (sem o texto) da UON em branco sobre
+fundo azul-marinho `#002D56`, a cor institucional principal do site da UON.

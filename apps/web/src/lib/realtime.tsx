@@ -1,5 +1,5 @@
 import type { PresenceView } from '@uon/shared/browser';
-import { useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { type ConnectionState, connectionState, getSocket, onConnectionState } from './socket';
 import { useAuth } from './auth';
@@ -14,6 +14,17 @@ const IDLE_MS = 5 * 60_000;
  * Wires realtime events into the query cache. Messages and notifications are always fetched over
  * HTTP; the socket only signals that something changed, so a lost connection never loses data.
  */
+/**
+ * Refetches after a realtime event. A plain invalidate is not enough while a query is still on its
+ * first load: TanStack Query then reuses that in-flight request, which started before the event and
+ * so misses the new data. Cancelling it first forces a fresh request.
+ */
+export async function refetchFresh(qc: QueryClient, queryKey: QueryKey) {
+  const state = qc.getQueryState(queryKey);
+  if (state?.fetchStatus === 'fetching' && state.data === undefined) await qc.cancelQueries({ queryKey });
+  await qc.invalidateQueries({ queryKey });
+}
+
 export function RealtimeProvider({ children }: { children: ReactNode }) {
   const { me } = useAuth();
   const qc = useQueryClient();
@@ -35,14 +46,14 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       if (!location.pathname.startsWith('/conversas') || n.category !== 'message') toastRef.current.info(n.title);
     };
     const onMessage = (m: { conversationId: string }) => {
-      void qc.invalidateQueries({ queryKey: ['conversations'] });
-      void qc.invalidateQueries({ queryKey: ['messages', m.conversationId] });
+      void refetchFresh(qc, ['conversations']);
+      void refetchFresh(qc, ['messages', m.conversationId]);
     };
     const onConversation = (c: { id: string }) => {
-      void qc.invalidateQueries({ queryKey: ['conversations'] });
-      void qc.invalidateQueries({ queryKey: ['conversation', c.id] });
+      void refetchFresh(qc, ['conversations']);
+      void refetchFresh(qc, ['conversation', c.id]);
     };
-    const onRead = (r: { conversationId: string }) => void qc.invalidateQueries({ queryKey: ['conversation', r.conversationId] });
+    const onRead = (r: { conversationId: string }) => void refetchFresh(qc, ['conversation', r.conversationId]);
     const onTicket = (t: { id: string }) => {
       void qc.invalidateQueries({ queryKey: ['ticket', t.id] });
       void qc.invalidateQueries({ queryKey: ['tickets'] });

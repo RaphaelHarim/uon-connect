@@ -115,6 +115,9 @@ export function LoginPage() {
           </div>
         </div>
       </div>
+      <p className="pb-3 text-center text-[13px]">
+        <a href="/baixar" className="text-brand-text underline-offset-2 hover:underline">Baixar o aplicativo</a>
+      </p>
       <footer className="pb-6 text-center text-[11px] tracking-[0.16em] text-fg-3 uppercase">Patrimônio de UON Consulting · Uso interno</footer>
     </div>
   );

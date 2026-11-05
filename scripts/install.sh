@@ -4,7 +4,10 @@
 # Primeira instalação (gera segredos, sobe banco + app + HTTPS e cria a conta fundadora):
 #   sudo ./scripts/install.sh --domain connect.exemplo.com.br \
 #        --founder-email pessoa@exemplo.com.br --founder-name "Nome da Pessoa" [--tls auto|internal|files] \
-#        [--allowed-ips "200.1.2.3/32 10.0.0.0/8"] [--no-proxy] [--skip-build]
+#        [--allowed-ips "200.1.2.3/32 10.0.0.0/8"] [--no-proxy] [--skip-build] [--tunnel-token TOKEN]
+#
+# --tunnel-token liga o túnel Cloudflare (acesso de fora sem abrir portas no roteador); o HTTPS fica
+# por conta da Cloudflare e o Caddy local não é usado (ver docs/SERVIDOR-WINDOWS.md).
 #
 # --skip-build usa uma imagem já construída (variável UON_IMAGE, padrão uon-connect:latest), por exemplo
 # quando a rede exige proxy/CA corporativa no build (veja docs/DEPLOYMENT.md) ou a imagem vem de um registro.
@@ -18,7 +21,7 @@ cd "$(dirname "$0")/.."
 ENV_FILE=.env.production
 COMPOSE=(docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml)
 
-DOMAIN="" FOUNDER_EMAIL="" FOUNDER_NAME="" TLS_MODE="auto" ALLOWED_IPS="" UPDATE=0 PROXY=1 BUILD=1
+DOMAIN="" FOUNDER_EMAIL="" FOUNDER_NAME="" TLS_MODE="auto" ALLOWED_IPS="" UPDATE=0 PROXY=1 BUILD=1 TUNNEL_TOKEN=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --domain) DOMAIN="$2"; shift 2 ;;
@@ -28,8 +31,9 @@ while [[ $# -gt 0 ]]; do
     --allowed-ips) ALLOWED_IPS="$2"; shift 2 ;;
     --no-proxy) PROXY=0; shift ;;
     --skip-build) BUILD=0; shift ;;
+    --tunnel-token) TUNNEL_TOKEN="$2"; PROXY=0; shift 2 ;;
     --update) UPDATE=1; shift ;;
-    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
     *) echo "Opção desconhecida: $1" >&2; exit 1 ;;
   esac
 done
@@ -42,6 +46,7 @@ docker compose version >/dev/null 2>&1 || die "O plugin 'docker compose' não es
 
 profiles() {
   if grep -q '^UON_PROXY=1' "$ENV_FILE"; then echo "--profile https"; fi
+  if grep -q '^CLOUDFLARE_TUNNEL_TOKEN=.' "$ENV_FILE"; then echo "--profile tunnel"; fi
 }
 
 wait_ready() {
@@ -116,6 +121,9 @@ UON_PROXY=$PROXY
 UON_DOMAIN=$DOMAIN
 UON_TLS=$TLS_MODE
 UON_ALLOWED_IPS=${ALLOWED_IPS:-0.0.0.0/0 ::/0}
+
+# Túnel Cloudflare (acesso de fora sem abrir portas). Vazio = desligado.
+CLOUDFLARE_TUNNEL_TOKEN=$TUNNEL_TOKEN
 EOF
 chmod 600 "$ENV_FILE"
 umask 022
